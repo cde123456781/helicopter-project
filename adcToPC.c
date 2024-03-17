@@ -51,6 +51,9 @@
 #define UART_USB_GPIO_PIN_TX    GPIO_PIN_1
 #define UART_USB_GPIO_PINS      UART_USB_GPIO_PIN_RX | UART_USB_GPIO_PIN_TX
 
+#define BITS 40960 // 2^12 * 10
+#define VOLTRANGE 33 // 3.3v * 10
+
 //********************************************************
 // Prototypes
 //********************************************************
@@ -72,6 +75,7 @@ static uint32_t g_ulSampCnt;    // Counter for the interrupts
 char statusStr[MAX_STR_LEN + 1];
 volatile uint8_t slowTick = false;
 
+uint16_t percentage;
 
 uint16_t helicopterLandedValue;
 
@@ -92,13 +96,19 @@ SysTickIntHandler(void)
     static uint8_t tickCount = 0;
     const uint8_t ticksPerSlow = SYSTICK_RATE_HZ / SLOWTICK_RATE_HZ;
 
-    //updateButtons ();       // Poll the buttons
+    updateButtons ();       // Poll the buttons
     if (++tickCount >= ticksPerSlow)
     {                       // Signal a slow tick
         tickCount = 0;
         slowTick = true;
     }
 }
+
+/*void
+ButtonIntHandler(void)
+{
+    updateButtons();
+}*/
 
 //*****************************************************************************
 //
@@ -140,6 +150,7 @@ initClock (void)
     // Register the interrupt handler
     SysTickIntRegister(SysTickIntHandler);
     //
+    //SysTickIntRegister(ButtonIntHandler);
     // Enable interrupt and device
     SysTickIntEnable();
     SysTickEnable();
@@ -191,6 +202,15 @@ initDisplay (void)
     OLEDInitialise ();
 }
 
+void
+clearDisplay(void) {
+    char string[17] = "                ";
+    OLEDStringDraw (string, 0, 0);
+    OLEDStringDraw (string, 0, 1);
+    OLEDStringDraw (string, 0, 2);
+    OLEDStringDraw (string, 0, 3);
+}
+
 //*****************************************************************************
 //
 // Function to display the mean ADC value (10-bit value, note) and sample count.
@@ -199,18 +219,19 @@ initDisplay (void)
 void
 displayMeanVal(uint16_t meanVal, uint32_t count)
 {
+
     char string[17];  // 16 characters across the display
 
     OLEDStringDraw ("ADC demo 1", 0, 0);
 
     // Form a new string for the line.  The maximum width specified for the
     //  number field ensures it is displayed right justified.
-    usnprintf (string, sizeof(string), "Mean ADC = %4d", meanVal);
+    usnprintf (string, sizeof(string), "Mean = %4d", meanVal);
 
     // Update line on display.
     OLEDStringDraw (string, 0, 1);
 
-    usnprintf (string, sizeof(string), "Sample # %5d", count);
+    usnprintf (string, sizeof(string), "Sample# %5d", count);
     OLEDStringDraw (string, 0, 3);
 }
 
@@ -252,15 +273,7 @@ UARTSend (char *pucBuffer)
     }
 }
 
-void
-displayButtonState (char *butStr, char *stateStr, uint8_t numPushes, uint8_t charLine)
-{
-    char string[MAX_STR_LEN + 1]; //Display fits 16 characters per line.
 
-    OLEDStringDraw ("                ", 0, charLine);
-    usprintf (string, "%s - %s %d", butStr, stateStr, numPushes); // * usprintf
-    OLEDStringDraw (string, 0, charLine);
-}
 
 
 // Set the helicopter's grounded value
@@ -270,22 +283,58 @@ setHelicopterLandedValue (uint16_t landedValue)
     helicopterLandedValue = landedValue;
 }
 
+// Calc percentage
+void
+calcPercentage(uint16_t meanVal, uint16_t volt)
+{
+    if (meanVal < helicopterLandedValue)
+    {
+        percentage = (((helicopterLandedValue - meanVal) * 100) / volt);
+    } else {
+
+        percentage = 0;
+
+    }
+
+}
+
+void
+displayAltitude(void)
+{
+
+    char string[17];  // 16 characters across the display
+
+    OLEDStringDraw ("Altitude %", 0, 0);
+
+    // Form a new string for the line.  The maximum width specified for the
+    //  number field ensures it is displayed right justified.
+    usnprintf (string, sizeof(string), "altitude = %4d", percentage);
+
+    // Update line on display.
+    OLEDStringDraw (string, 0, 2);
+
+}
 
 
 int
 main(void)
 {
     uint16_t i;
+    uint8_t displayMode = 0;
     int32_t sum;
 
+    initButtons ();
     initClock ();
     initADC ();
     initDisplay ();
     initCircBuf (&g_inBuffer, BUF_SIZE);
 
-    initButtons ();
+
     initialiseUSB_UART ();
+
     uint16_t meanVal;
+
+    uint16_t volt = BITS/VOLTRANGE; //approx 1241
 
     //
     // Enable interrupts to the processor.
@@ -302,7 +351,17 @@ main(void)
             sum = sum + readCircBuf (&g_inBuffer);
         // Calculate and display the rounded mean of the buffer contents
         meanVal = (2 * sum + BUF_SIZE) / 2 / BUF_SIZE;
-        displayMeanVal (meanVal, g_ulSampCnt);
+        //displayMeanVal (meanVal, g_ulSampCnt);
+        calcPercentage(meanVal, volt);
+
+        if (displayMode == 0)
+        {
+            displayAltitude();
+        } else if (displayMode == 1) {
+            displayMeanVal (meanVal, g_ulSampCnt);
+        }
+
+
 
         // At the initialisation of the program, set current mean sample value
         // to helicopterLandedValue
@@ -310,14 +369,28 @@ main(void)
             setHelicopterLandedValue(meanVal);
         }
 
-        SysCtlDelay (SysCtlClockGet() / 6);  // Update display at ~ 2 Hz
+        if(checkButton (LEFT) == PUSHED)
+        {
+            setHelicopterLandedValue(meanVal);
+        }
+
+        if(checkButton (UP) == PUSHED)
+        {
+            clearDisplay();
+            displayMode++;
+            displayMode = displayMode % 3;
+        }
+
+
+
+        SysCtlDelay (SysCtlClockGet() / 12);  // Update display at ~ 2 Hz
 
         if (slowTick)
         {
             slowTick = false;
             // Form and send a status message to the console
             //usprintf (statusStr, "Mean=%2d samples=%2d | \r\n", 0, g_ulSampCnt);
-            usprintf (statusStr, "Mean=%4d sample# =%5d | \r\n", 0, 0);
+            usprintf (statusStr, "Mean=%4d sample# =%5d | \r\n", meanVal, g_ulSampCnt);
             UARTSend (statusStr);
         }
     }
