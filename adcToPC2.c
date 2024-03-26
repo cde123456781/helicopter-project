@@ -309,13 +309,27 @@ displayAltitude(void)
 
 }
 
+uint32_t
+calcMean(void)
+{
+    uint16_t i;
+    // Background task: calculate the (approximate) mean of the values in the
+    // circular buffer and display it, together with the sample number.
+    uint16_t sum = 0;
+    for (i = 0; i < BUF_SIZE; i++)
+        sum = sum + readCircBuf (&g_inBuffer);
+    // Calculate and display the rounded mean of the buffer contents
+
+    //displayMeanVal (meanVal, g_ulSampCnt);
+    return (2 * sum + BUF_SIZE) / 2 / BUF_SIZE;
+}
+
 
 int
 main(void)
 {
-    uint16_t i;
+
     uint8_t displayMode = 0;
-    int32_t sum;
 
     initButtons ();
     initClock ();
@@ -333,35 +347,25 @@ main(void)
     //
     // Enable interrupts to the processor.
     IntMasterEnable();
+    SysCtlDelay (SysCtlClockGet() / 6);
+    meanVal = calcMean();
+    setHelicopterLandedValue(meanVal);
 
     while (1)
     {
 
-        //
-        // Background task: calculate the (approximate) mean of the values in the
-        // circular buffer and display it, together with the sample number.
-        sum = 0;
-        for (i = 0; i < BUF_SIZE; i++)
-            sum = sum + readCircBuf (&g_inBuffer);
-        // Calculate and display the rounded mean of the buffer contents
-        meanVal = (2 * sum + BUF_SIZE) / 2 / BUF_SIZE;
-        //displayMeanVal (meanVal, g_ulSampCnt);
+
+        meanVal = calcMean();
+
         calcPercentage(meanVal, volt);
 
+
         if (displayMode == 0)
-        {
-            displayAltitude();
-        } else if (displayMode == 1) {
-            displayMeanVal (meanVal, g_ulSampCnt);
-        }
-
-
-
-        // At the initialisation of the program, set current mean sample value
-        // to helicopterLandedValue
-        if (! helicopterLandedValue) {
-            setHelicopterLandedValue(meanVal);
-        }
+         {
+             displayAltitude();
+         } else if (displayMode == 1) {
+             displayMeanVal (meanVal, g_ulSampCnt);
+         }
 
         if(checkButton (LEFT) == PUSHED)
         {
@@ -377,7 +381,7 @@ main(void)
 
 
 
-        SysCtlDelay (SysCtlClockGet() / 12);  // Update display at ~ 2 Hz
+        SysCtlDelay (SysCtlClockGet() / 96);  // Update display at ~ 32 Hz
 
         if (slowTick)
         {
