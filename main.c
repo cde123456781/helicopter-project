@@ -76,8 +76,13 @@ char statusStr[MAX_STR_LEN + 1];
 volatile uint8_t slowTick = false;
 
 int16_t percentage;
+int16_t yawAngle;
+int8_t yawSlot;
 
 uint16_t helicopterLandedValue;
+
+uint8_t state;
+
 
 //*****************************************************************************
 //
@@ -132,6 +137,44 @@ ADCIntHandler(void)
     // Clean up, clearing the interrupt
     ADCIntClear(ADC1_BASE, 3);
 }
+
+//*****************************************************************************
+//
+// The handler for Port B Interrupts
+//
+//*****************************************************************************
+void
+PortBIntHandler(void)
+{
+    uint8_t newState = GPIOPinRead(GPIO_PORTB_BASE, GPIO_PIN_0 |GPIO_PIN_1)
+    uint8_t a = newState & 0x01;
+    uint8_t b = newState & 0x10;
+    if ((state == 0x00) && (newState == 0x01)) {
+        //cw
+        yawSlot ++;
+    }
+    else if ((state == 0x01) && (newState == 0x11)) {
+        //cw
+        yawSlot ++;
+    }
+    else if ((state == 0x11) && (newState == 0x10)) {
+        //cw
+        yawSlot ++;
+    }
+    else if ((state == 0x10) && (newState == 0x00)) {
+        //cw
+        yawSlot ++;
+    }
+    else {
+        //acw
+        yawSlot --;
+    }
+
+
+}
+
+
+
 
 //*****************************************************************************
 // Initialisation functions for the clock (incl. SysTick), ADC, display
@@ -200,6 +243,24 @@ initDisplay (void)
 {
     // intialise the Orbit OLED display
     OLEDInitialise ();
+}
+
+
+void initYawMonitor (void)
+{
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+
+
+    GPIOIntRegister(GPIO_PORTB_BASE, PortBIntHandler);
+
+    GPIOPinTypeGPIOInput(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+
+    GPIOIntTypeSet(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1, GPIO_BOTH_EDGES);
+
+    GPIOIntEnable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
+
+
+
 }
 
 void
