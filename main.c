@@ -81,7 +81,7 @@ volatile uint8_t slowTick = false;
 int16_t percentageAltitude;
 
 
-uint16_t yawAngle;
+int16_t yawAngle;
 uint8_t yawAngleSubDegree;
 int8_t yawCount;
 
@@ -189,11 +189,18 @@ void
 calculateYawAngle(void)
 {
     //GPIOIntDisable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
-    uint16_t slotAngle = 36000 / NUM_SLOTS;
+    uint16_t anglePerYawCount = 36000 / NUM_SLOTS / TRIGGERS_PER_SLOT;
 
-    yawAngle = yawCount * slotAngle;
+    if (yawCount % 360 > 180) {
+        yawAngle = ((yawCount % 360) - 360) * anglePerYawCount;
+        yawAngleSubDegree = 100 - (yawAngle % 100);
+    } else {
+        yawAngle = (yawCount % 360) * anglePerYawCount;
+        yawAngleSubDegree = (yawAngle % 100);
+    }
+    
 
-    yawAngleSubDegree = (yawAngle % 100);
+    
     yawAngle = yawAngle / 100;
     //GPIOIntEnable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
 }
