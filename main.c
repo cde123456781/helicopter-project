@@ -52,9 +52,10 @@
 #define UART_USB_GPIO_PINS      UART_USB_GPIO_PIN_RX | UART_USB_GPIO_PIN_TX
 
 #define BITS 40960 // 2^12 * 10
-#define VOLTRANGE 33 // 3.3v * 10
+#define VOLT_RANGE 33 // 3.3v * 10
 
-#define NUMSLOTS 112
+#define NUM_SLOTS 112
+#define TRIGGERS_PER_SLOT 4
 
 //********************************************************
 // Prototypes
@@ -77,14 +78,16 @@ static uint32_t g_ulSampCnt;    // Counter for the interrupts
 char statusStr[MAX_STR_LEN + 1];
 volatile uint8_t slowTick = false;
 
-int16_t percentage;
+int16_t percentageAltitude;
+
+
 uint16_t yawAngle;
 uint8_t yawAngleSubDegree;
-int8_t yawSlot;
+int8_t yawCount;
 
 uint16_t helicopterLandedValue;
 
-int32_t state = 0;
+int32_t yawState = 0;
 
 int32_t testcount = 0;
 
@@ -152,32 +155,27 @@ PortBIntHandler(void)
 {
     int32_t newState = GPIOPinRead(GPIO_PORTB_BASE, GPIO_PIN_0 |GPIO_PIN_1);
 
-    if ((state == 0b00) && (newState == 0b01)) {
+    if ((yawState == 0b00) && (newState == 0b01)) {
         //cw
-        yawSlot ++;
+        yawCount ++;
     }
-    else if ((state == 0b01) && (newState == 0b11)) {
+    else if ((yawState == 0b01) && (newState == 0b11)) {
         //cw
-        yawSlot ++;
+        yawCount ++;
     }
-    else if ((state == 0b11) && (newState == 0b10)) {
+    else if ((yawState == 0b11) && (newState == 0b10)) {
         //cw
-        yawSlot ++;
+        yawCount ++;
     }
-    else if ((state == 0b10) && (newState == 0b00)) {
+    else if ((yawState == 0b10) && (newState == 0b00)) {
         //cw
-        yawSlot ++;
+        yawCount ++;
     }
     else {
         //acw
-        if (yawSlot == 0) {
-            yawSlot = NUMSLOTS - 1;
-        } else {
-            yawSlot --;
-        }
+        yawCount --;
     }
-    yawSlot = yawSlot % NUMSLOTS;
-    state = newState;
+    yawState = newState;
     testcount ++;
     usprintf (statusStr, "%2d | \r\n", newState);
     UARTSend (statusStr);
@@ -191,9 +189,9 @@ void
 calculateYawAngle(void)
 {
     //GPIOIntDisable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
-    uint16_t slotAngle = 36000 / NUMSLOTS;
+    uint16_t slotAngle = 36000 / NUM_SLOTS;
 
-    yawAngle = yawSlot * slotAngle;
+    yawAngle = yawCount * slotAngle;
 
     yawAngleSubDegree = (yawAngle % 100);
     yawAngle = yawAngle / 100;
@@ -386,11 +384,11 @@ setHelicopterLandedValue (uint16_t landedValue)
     helicopterLandedValue = landedValue;
 }
 
-// Calc percentage
+// Calc percentage altitude
 void
-calcPercentage(uint16_t meanVal, uint16_t volt)
+calcPercentageAltitude(uint16_t meanVal, uint16_t volt)
 {
-    percentage = (((helicopterLandedValue - meanVal) * 100) / volt);
+    percentageAltitude = (((helicopterLandedValue - meanVal) * 100) / volt);
 
 
 }
@@ -405,7 +403,7 @@ displayAltitude(void)
 
     // Form a new string for the line.  The maximum width specified for the
     //  number field ensures it is displayed right justified.
-    usnprintf (string, sizeof(string), "altitude = %4d", percentage);
+    usnprintf (string, sizeof(string), "altitude = %4d", percentageAltitude);
 
     // Update line on display.
     OLEDStringDraw (string, 0, 2);
@@ -462,7 +460,7 @@ main(void)
 
     uint16_t meanVal;
 
-    uint16_t volt = BITS/VOLTRANGE; //approx 1241
+    uint16_t volt = BITS/VOLT_RANGE; //approx 1241
 
     //
     // Enable interrupts to the processor.
@@ -478,7 +476,7 @@ main(void)
         calculateYawAngle();
         meanVal = calcMean();
 
-        calcPercentage(meanVal, volt);
+        calcPercentageAltitude(meanVal, volt);
         //IntMasterEnable();
 
 
