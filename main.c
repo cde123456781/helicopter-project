@@ -54,6 +54,8 @@
 #define BITS 40960 // 2^12 * 10
 #define VOLTRANGE 33 // 3.3v * 10
 
+#define NUMSLOTS 112
+
 //********************************************************
 // Prototypes
 //********************************************************
@@ -76,13 +78,15 @@ char statusStr[MAX_STR_LEN + 1];
 volatile uint8_t slowTick = false;
 
 int16_t percentage;
-int16_t yawAngle;
+uint16_t yawAngle;
+uint8_t yawAngleSubDegree;
 int8_t yawSlot;
 
 uint16_t helicopterLandedValue;
 
-uint8_t state;
+int32_t state = 0;
 
+int32_t testcount = 0;
 
 //*****************************************************************************
 //
@@ -146,31 +150,54 @@ ADCIntHandler(void)
 void
 PortBIntHandler(void)
 {
-    uint8_t newState = GPIOPinRead(GPIO_PORTB_BASE, GPIO_PIN_0 |GPIO_PIN_1)
-    uint8_t a = newState & 0x01;
-    uint8_t b = newState & 0x10;
-    if ((state == 0x00) && (newState == 0x01)) {
+    int32_t newState = GPIOPinRead(GPIO_PORTB_BASE, GPIO_PIN_0 |GPIO_PIN_1);
+
+    if ((state == 0b00) && (newState == 0b01)) {
         //cw
         yawSlot ++;
     }
-    else if ((state == 0x01) && (newState == 0x11)) {
+    else if ((state == 0b01) && (newState == 0b11)) {
         //cw
         yawSlot ++;
     }
-    else if ((state == 0x11) && (newState == 0x10)) {
+    else if ((state == 0b11) && (newState == 0b10)) {
         //cw
         yawSlot ++;
     }
-    else if ((state == 0x10) && (newState == 0x00)) {
+    else if ((state == 0b10) && (newState == 0b00)) {
         //cw
         yawSlot ++;
     }
     else {
         //acw
-        yawSlot --;
+        if (yawSlot == 0) {
+            yawSlot = NUMSLOTS - 1;
+        } else {
+            yawSlot --;
+        }
     }
+    yawSlot = yawSlot % NUMSLOTS;
+    state = newState;
+    testcount ++;
+    usprintf (statusStr, "%2d | \r\n", newState);
+    UARTSend (statusStr);
+    usprintf (statusStr, "%4d | \r\n", testcount);
+    UARTSend (statusStr);
+    GPIOIntClear(GPIO_PORTB_BASE, GPIO_PIN_0 |GPIO_PIN_1);
 
+}
 
+void
+calculateYawAngle(void)
+{
+    //GPIOIntDisable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
+    uint16_t slotAngle = 36000 / NUMSLOTS;
+
+    yawAngle = yawSlot * slotAngle;
+
+    yawAngleSubDegree = (yawAngle % 100);
+    yawAngle = yawAngle / 100;
+    //GPIOIntEnable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
 }
 
 
@@ -250,14 +277,29 @@ void initYawMonitor (void)
 {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
 
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB))
+    {
 
+    }
+
+    //GPIOIntRegisterPin(GPIO_PORTB_BASE, GPIO_PIN_0, PortBIntHandler);
+    //GPIOIntRegisterPin(GPIO_PORTB_BASE, GPIO_PIN_1, PortBIntHandler);
     GPIOIntRegister(GPIO_PORTB_BASE, PortBIntHandler);
 
     GPIOPinTypeGPIOInput(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+    //GPIOPinTypeGPIOOutput(GPIO_PORTB_BASE, GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7);
+
+    //GPIOPinWrite()
 
     GPIOIntTypeSet(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1, GPIO_BOTH_EDGES);
 
+
+
+
     GPIOIntEnable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
+
+
+
 
 
 
@@ -359,7 +401,7 @@ displayAltitude(void)
 
     char string[17];  // 16 characters across the display
 
-    OLEDStringDraw ("Altitude %", 0, 0);
+    //OLEDStringDraw ("Altitude %", 0, 0);
 
     // Form a new string for the line.  The maximum width specified for the
     //  number field ensures it is displayed right justified.
@@ -370,9 +412,25 @@ displayAltitude(void)
 
 }
 
+void
+displayYawAngle(void)
+{
+    char string[17];  // 16 characters across the display
+
+    //OLEDStringDraw ("Altitude %", 0, 0);
+
+    // Form a new string for the line.  The maximum width specified for the
+    //  number field ensures it is displayed right justified.
+    usnprintf (string, sizeof(string), "Yaw = %3d.%2d", yawAngle, yawAngleSubDegree);
+
+    // Update line on display.
+    OLEDStringDraw (string, 0, 3);
+}
+
 uint32_t
 calcMean(void)
 {
+
     uint16_t i;
     // Background task: calculate the (approximate) mean of the values in the
     // circular buffer and display it, together with the sample number.
@@ -397,6 +455,7 @@ main(void)
     initADC ();
     initDisplay ();
     initCircBuf (&g_inBuffer, BUF_SIZE);
+    initYawMonitor();
 
 
     initialiseUSB_UART ();
@@ -412,18 +471,21 @@ main(void)
     meanVal = calcMean();
     setHelicopterLandedValue(meanVal);
 
+
     while (1)
     {
-
-
+        //IntMasterDisable();
+        calculateYawAngle();
         meanVal = calcMean();
 
         calcPercentage(meanVal, volt);
+        //IntMasterEnable();
 
 
         if (displayMode == 0)
          {
              displayAltitude();
+             displayYawAngle();
          } else if (displayMode == 1) {
              displayMeanVal (meanVal, g_ulSampCnt);
          }
