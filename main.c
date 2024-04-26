@@ -191,11 +191,11 @@ calculateYawAngle(void)
     //GPIOIntDisable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
     uint16_t anglePerYawCount = 36000 / NUM_SLOTS / TRIGGERS_PER_SLOT;
 
-    if (yawCount % 360 > 180) {
-        yawAngle = ((yawCount % 360) - 360) * anglePerYawCount;
+    if (yawCount % (NUM_SLOTS * TRIGGERS_PER_SLOT) > (NUM_SLOTS * TRIGGERS_PER_SLOT / 2)) {
+        yawAngle = ((yawCount % (NUM_SLOTS * TRIGGERS_PER_SLOT)) - (NUM_SLOTS * TRIGGERS_PER_SLOT)) * anglePerYawCount;
         yawAngleSubDegree = 100 - (yawAngle % 100);
     } else {
-        yawAngle = (yawCount % 360) * anglePerYawCount;
+        yawAngle = (yawCount % (NUM_SLOTS * TRIGGERS_PER_SLOT)) * anglePerYawCount;
         yawAngleSubDegree = (yawAngle % 100);
     }
     
