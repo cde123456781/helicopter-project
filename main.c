@@ -64,6 +64,7 @@
 
 // Set in powers of 10 depending on how many floating points desired (min 10)
 #define YAW_ANGLE_SCALE 1000
+#define YAW_DISPLAY_STRING "Yaw = %3d.%03d  "
 
 //********************************************************
 // Prototypes
@@ -455,7 +456,7 @@ displayYawAngle(void)
 
     // Form a new string for the line.  The maximum width specified for the
     //  number field ensures it is displayed right justified.
-    usnprintf (string, sizeof(string), "Yaw = %3d.%2d  ", yawAngle, yawAngleSubDegree);
+    usnprintf (string, sizeof(string), YAW_DISPLAY_STRING, yawAngle, yawAngleSubDegree);
 
     // Update line on display.
     OLEDStringDraw (string, 0, 3);
