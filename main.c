@@ -81,9 +81,9 @@ volatile uint8_t slowTick = false;
 int16_t percentageAltitude;
 
 
-int16_t yawAngle;
-uint8_t yawAngleSubDegree;
-int8_t yawCount;
+int32_t yawAngle;
+uint16_t yawAngleSubDegree;
+int16_t yawCount;
 
 uint16_t helicopterLandedValue;
 
@@ -156,31 +156,31 @@ PortBIntHandler(void)
     int32_t newState = GPIOPinRead(GPIO_PORTB_BASE, GPIO_PIN_0 |GPIO_PIN_1);
 
     if ((yawState == 0b00) && (newState == 0b01)) {
-        //cw
-        yawCount ++;
-    }
-    else if ((yawState == 0b01) && (newState == 0b11)) {
-        //cw
-        yawCount ++;
-    }
-    else if ((yawState == 0b11) && (newState == 0b10)) {
-        //cw
-        yawCount ++;
-    }
-    else if ((yawState == 0b10) && (newState == 0b00)) {
-        //cw
-        yawCount ++;
-    }
-    else {
         //acw
         yawCount --;
     }
+    else if ((yawState == 0b01) && (newState == 0b11)) {
+        //acw
+        yawCount --;
+    }
+    else if ((yawState == 0b11) && (newState == 0b10)) {
+        //acw
+        yawCount --;
+    }
+    else if ((yawState == 0b10) && (newState == 0b00)) {
+        //acw
+        yawCount --;
+    }
+    else {
+        //cw
+        yawCount ++;
+    }
     yawState = newState;
     testcount ++;
-    usprintf (statusStr, "%2d | \r\n", newState);
-    UARTSend (statusStr);
-    usprintf (statusStr, "%4d | \r\n", testcount);
-    UARTSend (statusStr);
+    //usprintf (statusStr, "%2d | \r\n", newState);
+    //UARTSend (statusStr);
+    //usprintf (statusStr, "%4d | \r\n", testcount);
+    //UARTSend (statusStr);
     GPIOIntClear(GPIO_PORTB_BASE, GPIO_PIN_0 |GPIO_PIN_1);
 
 }
@@ -189,19 +189,23 @@ void
 calculateYawAngle(void)
 {
     //GPIOIntDisable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
-    uint16_t anglePerYawCount = 36000 / NUM_SLOTS / TRIGGERS_PER_SLOT;
 
-    if (yawCount % (NUM_SLOTS * TRIGGERS_PER_SLOT) > (NUM_SLOTS * TRIGGERS_PER_SLOT / 2)) {
+    // Splits the revolution into 448
+    uint32_t anglePerYawCount = 360000 / (NUM_SLOTS * TRIGGERS_PER_SLOT);
+
+    if ((yawCount % (NUM_SLOTS * TRIGGERS_PER_SLOT)) > ((NUM_SLOTS * TRIGGERS_PER_SLOT) / 2)) {
         yawAngle = ((yawCount % (NUM_SLOTS * TRIGGERS_PER_SLOT)) - (NUM_SLOTS * TRIGGERS_PER_SLOT)) * anglePerYawCount;
-        yawAngleSubDegree = 100 - (yawAngle % 100);
-    } else {
-        yawAngle = (yawCount % (NUM_SLOTS * TRIGGERS_PER_SLOT)) * anglePerYawCount;
-        yawAngleSubDegree = (yawAngle % 100);
+        yawAngleSubDegree = 1000 - (yawAngle % 1000);
+    }
+    //positive
+    else {
+        yawAngle = (yawCount % (448)) * anglePerYawCount;
+        yawAngleSubDegree = (yawAngle % 1000);
     }
     
 
     
-    yawAngle = yawAngle / 100;
+    yawAngle = yawAngle / 1000;
     //GPIOIntEnable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
 }
 
@@ -426,7 +430,7 @@ displayYawAngle(void)
 
     // Form a new string for the line.  The maximum width specified for the
     //  number field ensures it is displayed right justified.
-    usnprintf (string, sizeof(string), "Yaw = %3d.%2d", yawAngle, yawAngleSubDegree);
+    usnprintf (string, sizeof(string), "Yaw = %3d.%2d  ", yawAngle, yawAngleSubDegree);
 
     // Update line on display.
     OLEDStringDraw (string, 0, 3);
@@ -479,12 +483,12 @@ main(void)
 
     while (1)
     {
-        //IntMasterDisable();
+        IntMasterDisable();
         calculateYawAngle();
         meanVal = calcMean();
 
         calcPercentageAltitude(meanVal, volt);
-        //IntMasterEnable();
+        IntMasterEnable();
 
 
         if (displayMode == 0)
@@ -516,9 +520,16 @@ main(void)
             slowTick = false;
             // Form and send a status message to the console
             //usprintf (statusStr, "Mean=%2d samples=%2d | \r\n", 0, g_ulSampCnt);
-            usprintf (statusStr, "Mean=%4d sample# =%5d | \r\n", meanVal, g_ulSampCnt);
-            UARTSend (statusStr);
+            //usprintf (statusStr, "Mean=%4d sample# =%5d | \r\n", meanVal, g_ulSampCnt);
+            //UARTSend (statusStr);
+
+            //usprintf (statusStr, "%4d | \r\n", testcount);
+            //UARTSend (statusStr);
         }
+        usprintf (statusStr, "%4d | \r\n", yawCount);
+
+        usprintf (statusStr, "%4d | \r\n", yawAngle);
+        UARTSend (statusStr);
     }
 }
 
