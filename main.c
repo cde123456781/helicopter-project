@@ -41,6 +41,7 @@
 #define SYSTICK_RATE_HZ 100
 #define SLOWTICK_RATE_HZ 4
 #define MAX_STR_LEN 100
+
 //---USB Serial comms: UART0, Rx:PA0 , Tx:PA1
 #define BAUD_RATE 9600
 #define UART_USB_BASE           UART0_BASE
@@ -51,11 +52,18 @@
 #define UART_USB_GPIO_PIN_TX    GPIO_PIN_1
 #define UART_USB_GPIO_PINS      UART_USB_GPIO_PIN_RX | UART_USB_GPIO_PIN_TX
 
+
+// ADC constants
 #define BITS 40960 // 2^12 * 10
 #define VOLT_RANGE 33 // 3.3v * 10
 
+
+// Yaw Constants
 #define NUM_SLOTS 112
 #define TRIGGERS_PER_SLOT 4
+
+// Set in powers of 10 depending on how many floating points desired (min 10)
+#define YAW_ANGLE_SCALE 1000
 
 //********************************************************
 // Prototypes
@@ -191,16 +199,33 @@ calculateYawAngle(void)
     //GPIOIntDisable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
 
     // Splits the revolution into 448
-    uint32_t anglePerYawCount = 360000 / (NUM_SLOTS * TRIGGERS_PER_SLOT);
+    uint32_t anglePerYawCount = 360 * YAW_ANGLE_SCALE / (NUM_SLOTS * TRIGGERS_PER_SLOT);
 
-    if ((yawCount % (NUM_SLOTS * TRIGGERS_PER_SLOT)) > ((NUM_SLOTS * TRIGGERS_PER_SLOT) / 2)) {
-        yawAngle = ((yawCount % (NUM_SLOTS * TRIGGERS_PER_SLOT)) - (NUM_SLOTS * TRIGGERS_PER_SLOT)) * anglePerYawCount;
-        yawAngleSubDegree = 1000 - (yawAngle % 1000);
-    }
-    //positive
-    else {
-        yawAngle = (yawCount % (448)) * anglePerYawCount;
-        yawAngleSubDegree = (yawAngle % 1000);
+    // This check is necessary because of the way modulo works in C
+    if (yawCount > 0) {
+        if ((yawCount % (NUM_SLOTS * TRIGGERS_PER_SLOT)) > ((NUM_SLOTS * TRIGGERS_PER_SLOT) / 2)) {
+            yawAngle = ((yawCount % (NUM_SLOTS * TRIGGERS_PER_SLOT)) - (NUM_SLOTS * TRIGGERS_PER_SLOT)) * anglePerYawCount;
+            yawAngleSubDegree = ( -1 * yawAngle) % YAW_ANGLE_SCALE;
+        }
+        //positive
+        else {
+            yawAngle = (yawCount % (NUM_SLOTS * TRIGGERS_PER_SLOT)) * anglePerYawCount;
+            yawAngleSubDegree = (yawAngle % YAW_ANGLE_SCALE);
+        }
+    } else {
+        // Negative
+        if ( ((-1 * yawCount) % (NUM_SLOTS * TRIGGERS_PER_SLOT)) < ((NUM_SLOTS * TRIGGERS_PER_SLOT)/ 2)) {
+            yawAngle = -1 * ((-1 * yawCount) % (NUM_SLOTS * TRIGGERS_PER_SLOT)) * anglePerYawCount;
+            yawAngleFloat = -1 * ((-1 * yawCount) % (NUM_SLOTS * TRIGGERS_PER_SLOT)) * anglePerYawCount;
+            yawAngleSubDegree = (-1 * yawAngle) % YAW_ANGLE_SCALE;
+        }
+        //positive
+        else {
+            yawAngle = -1 * (((-1 * yawCount) % (NUM_SLOTS * TRIGGERS_PER_SLOT)) - (NUM_SLOTS * TRIGGERS_PER_SLOT)) * anglePerYawCount;
+            yawAngleFloat = -1 * ((((-1 * yawCount) % (NUM_SLOTS * TRIGGERS_PER_SLOT)) - (NUM_SLOTS * TRIGGERS_PER_SLOT)) * anglePerYawCount);
+            yawAngleSubDegree = -1 * (-1 * yawAngle) % YAW_ANGLE_SCALE;
+        }
+
     }
     
 
