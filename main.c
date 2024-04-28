@@ -232,28 +232,28 @@ calculateYawAngle(void)
 
     // Splits the revolution into 448
     uint32_t anglePerYawCount = 360 * YAW_ANGLE_SCALE / (NUM_SLOTS * TRIGGERS_PER_SLOT);
-
+    uint32_t totalNumTriggers = NUM_SLOTS * TRIGGERS_PER_SLOT;
     // This check is necessary because of the way modulo works in C
     if (yawCount > 0) {
-        if ((yawCount % (NUM_SLOTS * TRIGGERS_PER_SLOT)) > ((NUM_SLOTS * TRIGGERS_PER_SLOT) / 2)) {
-            yawAngle = ((yawCount % (NUM_SLOTS * TRIGGERS_PER_SLOT)) - (NUM_SLOTS * TRIGGERS_PER_SLOT)) * anglePerYawCount;
+        if ((yawCount % totalNumTriggers) > (totalNumTriggers / 2)) {
+            yawAngle = ((yawCount % totalNumTriggers) - totalNumTriggers) * anglePerYawCount;
             yawAngleSubDegree = ( -1 * yawAngle) % YAW_ANGLE_SCALE;
         }
         //positive
         else {
-            yawAngle = (yawCount % (NUM_SLOTS * TRIGGERS_PER_SLOT)) * anglePerYawCount;
+            yawAngle = (yawCount % totalNumTriggers) * anglePerYawCount;
             yawAngleSubDegree = (yawAngle % YAW_ANGLE_SCALE);
         }
     } else {
         // Negative
-        if ( ((-1 * yawCount) % (NUM_SLOTS * TRIGGERS_PER_SLOT)) < ((NUM_SLOTS * TRIGGERS_PER_SLOT)/ 2)) {
-            yawAngle = -1 * ((-1 * yawCount) % (NUM_SLOTS * TRIGGERS_PER_SLOT)) * anglePerYawCount;
+        if ( ((-1 * yawCount) % totalNumTriggers) < (totalNumTriggers/ 2)) {
+            yawAngle = -1 * ((-1 * yawCount) % totalNumTriggers) * anglePerYawCount;
 
             yawAngleSubDegree = (-1 * yawAngle) % YAW_ANGLE_SCALE;
         }
         //positive
         else {
-            yawAngle = -1 * (((-1 * yawCount) % (NUM_SLOTS * TRIGGERS_PER_SLOT)) - (NUM_SLOTS * TRIGGERS_PER_SLOT)) * anglePerYawCount;
+            yawAngle = -1 * (((-1 * yawCount) % totalNumTriggers) - totalNumTriggers) * anglePerYawCount;
 
             yawAngleSubDegree = -1 * (-1 * yawAngle) % YAW_ANGLE_SCALE;
         }
