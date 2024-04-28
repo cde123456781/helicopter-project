@@ -231,8 +231,8 @@ calculateYawAngle(void)
     //GPIOIntDisable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
 
     // Splits the revolution into 448
-    uint32_t anglePerYawCount = 360 * YAW_ANGLE_SCALE / (NUM_SLOTS * TRIGGERS_PER_SLOT);
-    uint32_t totalNumTriggers = NUM_SLOTS * TRIGGERS_PER_SLOT;
+    int32_t anglePerYawCount = 360 * YAW_ANGLE_SCALE / (NUM_SLOTS * TRIGGERS_PER_SLOT);
+    int32_t totalNumTriggers = NUM_SLOTS * TRIGGERS_PER_SLOT;
     // This check is necessary because of the way modulo works in C
     if (yawCount > 0) {
         if ((yawCount % totalNumTriggers) > (totalNumTriggers / 2)) {
