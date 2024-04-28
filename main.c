@@ -576,10 +576,9 @@ main(void)
 
         if (slowTick)
         {
-            //meanVal = calcMean(); Even when calculating the mean here it isn't changing
             slowTick = false;
             // Form and send a status message to the console
-            //usprintf (statusStr, "Mean=%2d samples=%2d | \r\n", 0, g_ulSampCnt);
+
             usprintf (statusStr, "Mean=%4d sample# =%5d | \r\n", meanVal, g_ulSampCnt);
             UARTSend (statusStr);
             usprintf (statusStr, "Altitude=%4d | \r\n", percentageAltitude);
@@ -587,13 +586,9 @@ main(void)
             usprintf (statusStr, "buffVal=%4d | \r\n", ulValue);
             UARTSend (statusStr);
 
-            //usprintf (statusStr, "%4d | \r\n", testcount);
-            //UARTSend (statusStr);
+
         }
-//        usprintf (statusStr, "%4d | \r\n", yawCount);
-//
-//        usprintf (statusStr, "%4d | \r\n", yawAngle);
-//        UARTSend (statusStr);
+
     }
 }
 
