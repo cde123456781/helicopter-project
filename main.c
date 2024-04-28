@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
+//#include "inc/tm4c123gh6pm.h"
 #include "inc/hw_memmap.h"
 #include "inc/hw_types.h"
 #include "driverlib/adc.h"
@@ -24,6 +25,7 @@
 #include "utils/ustdlib.h"
 #include "circBufT.h"
 #include "OrbitOLED/OrbitOLEDInterface.h"
+
 
 #include "driverlib/uart.h"
 #include "driverlib/pin_map.h"
@@ -52,6 +54,7 @@
 #define UART_USB_GPIO_PIN_TX    GPIO_PIN_1
 #define UART_USB_GPIO_PINS      UART_USB_GPIO_PIN_RX | UART_USB_GPIO_PIN_TX
 
+#define BLUE_LED  GPIO_PIN_2
 
 // ADC constants
 #define BITS 40960 // 2^12 * 10
@@ -100,6 +103,31 @@ int32_t yawState = 0;
 
 int32_t testcount = 0;
 
+uint32_t ulValue = 0;
+
+void
+initDebugLED(void)
+{
+    // Enable GPIO Port F
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+
+    // Set up the specific port pin as medium strength current & pull-down config.
+    // Refer to TivaWare peripheral lib user manual for set up for configuration options
+    GPIOPadConfigSet(GPIO_PORTF_BASE, BLUE_LED, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPD);
+
+    // Set data direction register as output
+    GPIODirModeSet(GPIO_PORTF_BASE, BLUE_LED, GPIO_DIR_MODE_OUT);
+
+    // Write a zero to the output pin 3 on port F
+    GPIOPinWrite(GPIO_PORTF_BASE, BLUE_LED, 0x00);
+}
+
+void
+debugLED(void)
+{
+    GPIOPinWrite(GPIO_PORTF_BASE,  BLUE_LED, BLUE_LED);
+}
+
 //*****************************************************************************
 //
 // The interrupt handler for the for SysTick interrupt.
@@ -140,9 +168,10 @@ ButtonIntHandler(void)
 void
 ADCIntHandler(void)
 {
-    uint32_t ulValue;
+    //uint32_t ulValue;
 
-    //
+    //debugLED
+    //debugLED();
     // Get the single sample from ADC1.  ADC_BASE is defined in
     // inc/hw_memmap.h
     ADCSequenceDataGet(ADC1_BASE, 3, &ulValue);
@@ -150,6 +179,7 @@ ADCIntHandler(void)
     // Place it in the circular buffer (advancing write index)
     writeCircBuf (&g_inBuffer, ulValue);
     //
+
     // Clean up, clearing the interrupt
     ADCIntClear(ADC1_BASE, 3);
 }
@@ -190,6 +220,7 @@ PortBIntHandler(void)
     //UARTSend (statusStr);
     //usprintf (statusStr, "%4d | \r\n", testcount);
     //UARTSend (statusStr);
+    //debugLED();
     GPIOIntClear(GPIO_PORTB_BASE, GPIO_PIN_0 |GPIO_PIN_1);
 
 }
@@ -217,13 +248,13 @@ calculateYawAngle(void)
         // Negative
         if ( ((-1 * yawCount) % (NUM_SLOTS * TRIGGERS_PER_SLOT)) < ((NUM_SLOTS * TRIGGERS_PER_SLOT)/ 2)) {
             yawAngle = -1 * ((-1 * yawCount) % (NUM_SLOTS * TRIGGERS_PER_SLOT)) * anglePerYawCount;
-            yawAngleFloat = -1 * ((-1 * yawCount) % (NUM_SLOTS * TRIGGERS_PER_SLOT)) * anglePerYawCount;
+
             yawAngleSubDegree = (-1 * yawAngle) % YAW_ANGLE_SCALE;
         }
         //positive
         else {
             yawAngle = -1 * (((-1 * yawCount) % (NUM_SLOTS * TRIGGERS_PER_SLOT)) - (NUM_SLOTS * TRIGGERS_PER_SLOT)) * anglePerYawCount;
-            yawAngleFloat = -1 * ((((-1 * yawCount) % (NUM_SLOTS * TRIGGERS_PER_SLOT)) - (NUM_SLOTS * TRIGGERS_PER_SLOT)) * anglePerYawCount);
+
             yawAngleSubDegree = -1 * (-1 * yawAngle) % YAW_ANGLE_SCALE;
         }
 
@@ -426,7 +457,7 @@ void
 calcPercentageAltitude(uint16_t meanVal, uint16_t volt)
 {
     percentageAltitude = (((helicopterLandedValue - meanVal) * 100) / volt);
-
+    //debugLED();
 
 }
 
@@ -468,7 +499,7 @@ calcMean(void)
 
     uint16_t i;
     // Background task: calculate the (approximate) mean of the values in the
-    // circular buffer and display it, together with the sample number.
+    // circular buffer
     uint16_t sum = 0;
     for (i = 0; i < BUF_SIZE; i++)
         sum = sum + readCircBuf (&g_inBuffer);
@@ -484,7 +515,7 @@ main(void)
 {
 
     uint8_t displayMode = 0;
-
+    initDebugLED();
     initButtons ();
     initClock ();
     initADC ();
@@ -499,14 +530,15 @@ main(void)
 
     uint16_t volt = BITS/VOLT_RANGE; //approx 1241
 
-    //
-    // Enable interrupts to the processor.
-    IntMasterEnable();
+
     SysCtlDelay (SysCtlClockGet() / 6);
+
     meanVal = calcMean();
     setHelicopterLandedValue(meanVal);
 
-
+    //
+    // Enable interrupts to the processor.
+    IntMasterEnable();
     while (1)
     {
         IntMasterDisable();
@@ -527,6 +559,7 @@ main(void)
 
         if(checkButton (LEFT) == PUSHED)
         {
+            //debugLED(); // LED not on upon start, but on after left button pressed
             setHelicopterLandedValue(meanVal);
         }
 
@@ -543,19 +576,25 @@ main(void)
 
         if (slowTick)
         {
+            //meanVal = calcMean(); Even when calculating the mean here it isn't changing
             slowTick = false;
             // Form and send a status message to the console
             //usprintf (statusStr, "Mean=%2d samples=%2d | \r\n", 0, g_ulSampCnt);
-            //usprintf (statusStr, "Mean=%4d sample# =%5d | \r\n", meanVal, g_ulSampCnt);
-            //UARTSend (statusStr);
+            usprintf (statusStr, "Mean=%4d sample# =%5d | \r\n", meanVal, g_ulSampCnt);
+            UARTSend (statusStr);
+            usprintf (statusStr, "Altitude=%4d | \r\n", percentageAltitude);
+            UARTSend (statusStr);
+            usprintf (statusStr, "buffVal=%4d | \r\n", ulValue);
+            UARTSend (statusStr);
 
             //usprintf (statusStr, "%4d | \r\n", testcount);
             //UARTSend (statusStr);
         }
-        usprintf (statusStr, "%4d | \r\n", yawCount);
-
-        usprintf (statusStr, "%4d | \r\n", yawAngle);
-        UARTSend (statusStr);
+//        usprintf (statusStr, "%4d | \r\n", yawCount);
+//
+//        usprintf (statusStr, "%4d | \r\n", yawAngle);
+//        UARTSend (statusStr);
     }
 }
+
 
