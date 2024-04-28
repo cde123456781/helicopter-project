@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
+//#include "inc/tm4c123gh6pm.h"
 #include "inc/hw_memmap.h"
 #include "inc/hw_types.h"
 #include "driverlib/adc.h"
@@ -24,6 +25,7 @@
 #include "utils/ustdlib.h"
 #include "circBufT.h"
 #include "OrbitOLED/OrbitOLEDInterface.h"
+
 
 #include "driverlib/uart.h"
 #include "driverlib/pin_map.h"
@@ -41,6 +43,7 @@
 #define SYSTICK_RATE_HZ 100
 #define SLOWTICK_RATE_HZ 4
 #define MAX_STR_LEN 100
+
 //---USB Serial comms: UART0, Rx:PA0 , Tx:PA1
 #define BAUD_RATE 9600
 #define UART_USB_BASE           UART0_BASE
@@ -51,8 +54,20 @@
 #define UART_USB_GPIO_PIN_TX    GPIO_PIN_1
 #define UART_USB_GPIO_PINS      UART_USB_GPIO_PIN_RX | UART_USB_GPIO_PIN_TX
 
+#define BLUE_LED  GPIO_PIN_2
+
+// ADC constants
 #define BITS 40960 // 2^12 * 10
-#define VOLTRANGE 33 // 3.3v * 10
+#define VOLT_RANGE 33 // 3.3v * 10
+
+
+// Yaw Constants
+#define NUM_SLOTS 112
+#define TRIGGERS_PER_SLOT 4
+
+// Set in powers of 10 depending on how many floating points desired (min 10)
+#define YAW_ANGLE_SCALE 1000
+#define YAW_DISPLAY_STRING "Yaw = %3d.%03d  "
 
 //********************************************************
 // Prototypes
@@ -75,9 +90,43 @@ static uint32_t g_ulSampCnt;    // Counter for the interrupts
 char statusStr[MAX_STR_LEN + 1];
 volatile uint8_t slowTick = false;
 
-int16_t percentage;
+int16_t percentageAltitude;
+
+
+int32_t yawAngle;
+uint16_t yawAngleSubDegree;
+int16_t yawCount;
 
 uint16_t helicopterLandedValue;
+
+int32_t yawState = 0;
+
+int32_t testcount = 0;
+
+uint32_t ulValue = 0;
+
+void
+initDebugLED(void)
+{
+    // Enable GPIO Port F
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF);
+
+    // Set up the specific port pin as medium strength current & pull-down config.
+    // Refer to TivaWare peripheral lib user manual for set up for configuration options
+    GPIOPadConfigSet(GPIO_PORTF_BASE, BLUE_LED, GPIO_STRENGTH_4MA, GPIO_PIN_TYPE_STD_WPD);
+
+    // Set data direction register as output
+    GPIODirModeSet(GPIO_PORTF_BASE, BLUE_LED, GPIO_DIR_MODE_OUT);
+
+    // Write a zero to the output pin 3 on port F
+    GPIOPinWrite(GPIO_PORTF_BASE, BLUE_LED, 0x00);
+}
+
+void
+debugLED(void)
+{
+    GPIOPinWrite(GPIO_PORTF_BASE,  BLUE_LED, BLUE_LED);
+}
 
 //*****************************************************************************
 //
@@ -119,9 +168,10 @@ ButtonIntHandler(void)
 void
 ADCIntHandler(void)
 {
-    uint32_t ulValue;
+    //uint32_t ulValue;
 
-    //
+    //debugLED
+    //debugLED();
     // Get the single sample from ADC1.  ADC_BASE is defined in
     // inc/hw_memmap.h
     ADCSequenceDataGet(ADC1_BASE, 3, &ulValue);
@@ -129,9 +179,95 @@ ADCIntHandler(void)
     // Place it in the circular buffer (advancing write index)
     writeCircBuf (&g_inBuffer, ulValue);
     //
+
     // Clean up, clearing the interrupt
     ADCIntClear(ADC1_BASE, 3);
 }
+
+//*****************************************************************************
+//
+// The handler for Port B Interrupts
+//
+//*****************************************************************************
+void
+PortBIntHandler(void)
+{
+    int32_t newState = GPIOPinRead(GPIO_PORTB_BASE, GPIO_PIN_0 |GPIO_PIN_1);
+
+    if ((yawState == 0b00) && (newState == 0b01)) {
+        //acw
+        yawCount --;
+    }
+    else if ((yawState == 0b01) && (newState == 0b11)) {
+        //acw
+        yawCount --;
+    }
+    else if ((yawState == 0b11) && (newState == 0b10)) {
+        //acw
+        yawCount --;
+    }
+    else if ((yawState == 0b10) && (newState == 0b00)) {
+        //acw
+        yawCount --;
+    }
+    else {
+        //cw
+        yawCount ++;
+    }
+    yawState = newState;
+    testcount ++;
+    //usprintf (statusStr, "%2d | \r\n", newState);
+    //UARTSend (statusStr);
+    //usprintf (statusStr, "%4d | \r\n", testcount);
+    //UARTSend (statusStr);
+    //debugLED();
+    GPIOIntClear(GPIO_PORTB_BASE, GPIO_PIN_0 |GPIO_PIN_1);
+
+}
+
+void
+calculateYawAngle(void)
+{
+    //GPIOIntDisable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
+
+    // Splits the revolution into 448
+    uint32_t anglePerYawCount = 360 * YAW_ANGLE_SCALE / (NUM_SLOTS * TRIGGERS_PER_SLOT);
+    uint32_t totalNumTriggers = NUM_SLOTS * TRIGGERS_PER_SLOT;
+    // This check is necessary because of the way modulo works in C
+    if (yawCount > 0) {
+        if ((yawCount % totalNumTriggers) > (totalNumTriggers / 2)) {
+            yawAngle = ((yawCount % totalNumTriggers) - totalNumTriggers) * anglePerYawCount;
+            yawAngleSubDegree = ( -1 * yawAngle) % YAW_ANGLE_SCALE;
+        }
+        //positive
+        else {
+            yawAngle = (yawCount % totalNumTriggers) * anglePerYawCount;
+            yawAngleSubDegree = (yawAngle % YAW_ANGLE_SCALE);
+        }
+    } else {
+        // Negative
+        if ( ((-1 * yawCount) % totalNumTriggers) < (totalNumTriggers/ 2)) {
+            yawAngle = -1 * ((-1 * yawCount) % totalNumTriggers) * anglePerYawCount;
+
+            yawAngleSubDegree = (-1 * yawAngle) % YAW_ANGLE_SCALE;
+        }
+        //positive
+        else {
+            yawAngle = -1 * (((-1 * yawCount) % totalNumTriggers) - totalNumTriggers) * anglePerYawCount;
+
+            yawAngleSubDegree = -1 * (-1 * yawAngle) % YAW_ANGLE_SCALE;
+        }
+
+    }
+    
+
+    
+    yawAngle = yawAngle / 1000;
+    //GPIOIntEnable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
+}
+
+
+
 
 //*****************************************************************************
 // Initialisation functions for the clock (incl. SysTick), ADC, display
@@ -200,6 +336,39 @@ initDisplay (void)
 {
     // intialise the Orbit OLED display
     OLEDInitialise ();
+}
+
+
+void initYawMonitor (void)
+{
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB))
+    {
+
+    }
+
+    //GPIOIntRegisterPin(GPIO_PORTB_BASE, GPIO_PIN_0, PortBIntHandler);
+    //GPIOIntRegisterPin(GPIO_PORTB_BASE, GPIO_PIN_1, PortBIntHandler);
+    GPIOIntRegister(GPIO_PORTB_BASE, PortBIntHandler);
+
+    GPIOPinTypeGPIOInput(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+    //GPIOPinTypeGPIOOutput(GPIO_PORTB_BASE, GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7);
+
+    //GPIOPinWrite()
+
+    GPIOIntTypeSet(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1, GPIO_BOTH_EDGES);
+
+
+
+
+    GPIOIntEnable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
+
+
+
+
+
+
 }
 
 void
@@ -283,12 +452,12 @@ setHelicopterLandedValue (uint16_t landedValue)
     helicopterLandedValue = landedValue;
 }
 
-// Calc percentage
+// Calc percentage altitude
 void
-calcPercentage(uint16_t meanVal, uint16_t volt)
+calcPercentageAltitude(uint16_t meanVal, uint16_t volt)
 {
-    percentage = (((helicopterLandedValue - meanVal) * 100) / volt);
-
+    percentageAltitude = (((helicopterLandedValue - meanVal) * 100) / volt);
+    //debugLED();
 
 }
 
@@ -298,23 +467,39 @@ displayAltitude(void)
 
     char string[17];  // 16 characters across the display
 
-    OLEDStringDraw ("Altitude %", 0, 0);
+    //OLEDStringDraw ("Altitude %", 0, 0);
 
     // Form a new string for the line.  The maximum width specified for the
     //  number field ensures it is displayed right justified.
-    usnprintf (string, sizeof(string), "altitude = %4d", percentage);
+    usnprintf (string, sizeof(string), "altitude = %4d", percentageAltitude);
 
     // Update line on display.
     OLEDStringDraw (string, 0, 2);
 
 }
 
+void
+displayYawAngle(void)
+{
+    char string[17];  // 16 characters across the display
+
+    //OLEDStringDraw ("Altitude %", 0, 0);
+
+    // Form a new string for the line.  The maximum width specified for the
+    //  number field ensures it is displayed right justified.
+    usnprintf (string, sizeof(string), YAW_DISPLAY_STRING, yawAngle, yawAngleSubDegree);
+
+    // Update line on display.
+    OLEDStringDraw (string, 0, 3);
+}
+
 uint32_t
 calcMean(void)
 {
+
     uint16_t i;
     // Background task: calculate the (approximate) mean of the values in the
-    // circular buffer and display it, together with the sample number.
+    // circular buffer
     uint16_t sum = 0;
     for (i = 0; i < BUF_SIZE; i++)
         sum = sum + readCircBuf (&g_inBuffer);
@@ -330,45 +515,51 @@ main(void)
 {
 
     uint8_t displayMode = 0;
-
+    initDebugLED();
     initButtons ();
     initClock ();
     initADC ();
     initDisplay ();
     initCircBuf (&g_inBuffer, BUF_SIZE);
+    initYawMonitor();
 
 
     initialiseUSB_UART ();
 
     uint16_t meanVal;
 
-    uint16_t volt = BITS/VOLTRANGE; //approx 1241
+    uint16_t volt = BITS/VOLT_RANGE; //approx 1241
+
+
+    SysCtlDelay (SysCtlClockGet() / 6);
+
+    meanVal = calcMean();
+    setHelicopterLandedValue(meanVal);
 
     //
     // Enable interrupts to the processor.
     IntMasterEnable();
-    SysCtlDelay (SysCtlClockGet() / 6);
-    meanVal = calcMean();
-    setHelicopterLandedValue(meanVal);
-
     while (1)
     {
-
-
+        IntMasterDisable();
+        calculateYawAngle();
         meanVal = calcMean();
 
-        calcPercentage(meanVal, volt);
+        calcPercentageAltitude(meanVal, volt);
+        IntMasterEnable();
 
 
         if (displayMode == 0)
          {
              displayAltitude();
+             displayYawAngle();
          } else if (displayMode == 1) {
              displayMeanVal (meanVal, g_ulSampCnt);
          }
 
         if(checkButton (LEFT) == PUSHED)
         {
+            //debugLED(); // LED not on upon start, but on after left button pressed
             setHelicopterLandedValue(meanVal);
         }
 
@@ -387,10 +578,18 @@ main(void)
         {
             slowTick = false;
             // Form and send a status message to the console
-            //usprintf (statusStr, "Mean=%2d samples=%2d | \r\n", 0, g_ulSampCnt);
+
             usprintf (statusStr, "Mean=%4d sample# =%5d | \r\n", meanVal, g_ulSampCnt);
             UARTSend (statusStr);
+            usprintf (statusStr, "Altitude=%4d | \r\n", percentageAltitude);
+            UARTSend (statusStr);
+            usprintf (statusStr, "buffVal=%4d | \r\n", ulValue);
+            UARTSend (statusStr);
+
+
         }
+
     }
 }
+
 
