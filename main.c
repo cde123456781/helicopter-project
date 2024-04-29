@@ -33,6 +33,7 @@
 #include "inc/hw_ints.h"
 #include "stdio.h"
 #include "stdlib.h"
+#include "yaw.h"
 
 //*****************************************************************************
 // Constants
@@ -61,12 +62,12 @@
 #define VOLT_RANGE 33 // 3.3v * 10
 
 
-// Yaw Constants
-#define NUM_SLOTS 112
-#define TRIGGERS_PER_SLOT 4
+//// Yaw Constants
+//#define NUM_SLOTS 112
+//#define TRIGGERS_PER_SLOT 4
 
 // Set in powers of 10 depending on how many floating points desired (min 10)
-#define YAW_ANGLE_SCALE 1000
+//#define YAW_ANGLE_SCALE 1000
 #define YAW_DISPLAY_STRING "Yaw = %3d.%03d  "
 
 //********************************************************
@@ -92,14 +93,7 @@ volatile uint8_t slowTick = false;
 
 int16_t percentageAltitude;
 
-
-int32_t yawAngle;
-uint16_t yawAngleSubDegree;
-int16_t yawCount;
-
 uint16_t helicopterLandedValue;
-
-int32_t yawState = 0;
 
 int32_t testcount = 0;
 
@@ -184,87 +178,9 @@ ADCIntHandler(void)
     ADCIntClear(ADC1_BASE, 3);
 }
 
-//*****************************************************************************
-//
-// The handler for Port B Interrupts
-//
-//*****************************************************************************
-void
-PortBIntHandler(void)
-{
-    int32_t newState = GPIOPinRead(GPIO_PORTB_BASE, GPIO_PIN_0 |GPIO_PIN_1);
 
-    if ((yawState == 0b00) && (newState == 0b01)) {
-        //acw
-        yawCount --;
-    }
-    else if ((yawState == 0b01) && (newState == 0b11)) {
-        //acw
-        yawCount --;
-    }
-    else if ((yawState == 0b11) && (newState == 0b10)) {
-        //acw
-        yawCount --;
-    }
-    else if ((yawState == 0b10) && (newState == 0b00)) {
-        //acw
-        yawCount --;
-    }
-    else {
-        //cw
-        yawCount ++;
-    }
-    yawState = newState;
-    testcount ++;
-    //usprintf (statusStr, "%2d | \r\n", newState);
-    //UARTSend (statusStr);
-    //usprintf (statusStr, "%4d | \r\n", testcount);
-    //UARTSend (statusStr);
-    //debugLED();
-    GPIOIntClear(GPIO_PORTB_BASE, GPIO_PIN_0 |GPIO_PIN_1);
 
-}
 
-void
-calculateYawAngle(void)
-{
-    //GPIOIntDisable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
-
-    // Splits the revolution into 448
-    int32_t anglePerYawCount = 360 * YAW_ANGLE_SCALE / (NUM_SLOTS * TRIGGERS_PER_SLOT);
-    int32_t totalNumTriggers = NUM_SLOTS * TRIGGERS_PER_SLOT;
-    // This check is necessary because of the way modulo works in C
-    if (yawCount > 0) {
-        if ((yawCount % totalNumTriggers) > (totalNumTriggers / 2)) {
-            yawAngle = ((yawCount % totalNumTriggers) - totalNumTriggers) * anglePerYawCount;
-            yawAngleSubDegree = ( -1 * yawAngle) % YAW_ANGLE_SCALE;
-        }
-        //positive
-        else {
-            yawAngle = (yawCount % totalNumTriggers) * anglePerYawCount;
-            yawAngleSubDegree = (yawAngle % YAW_ANGLE_SCALE);
-        }
-    } else {
-        // Negative
-        if ( ((-1 * yawCount) % totalNumTriggers) < (totalNumTriggers/ 2)) {
-            yawAngle = -1 * ((-1 * yawCount) % totalNumTriggers) * anglePerYawCount;
-
-            yawAngleSubDegree = (-1 * yawAngle) % YAW_ANGLE_SCALE;
-        }
-        //positive
-        else {
-            yawAngle = -1 * (((-1 * yawCount) % totalNumTriggers) - totalNumTriggers) * anglePerYawCount;
-
-            yawAngleSubDegree = -1 * (-1 * yawAngle) % YAW_ANGLE_SCALE;
-        }
-
-    }
-    
-
-    
-    yawAngle = yawAngle / 1000;
-    //GPIOIntEnable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
-}
 
 
 
@@ -339,37 +255,7 @@ initDisplay (void)
 }
 
 
-void initYawMonitor (void)
-{
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
 
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB))
-    {
-
-    }
-
-    //GPIOIntRegisterPin(GPIO_PORTB_BASE, GPIO_PIN_0, PortBIntHandler);
-    //GPIOIntRegisterPin(GPIO_PORTB_BASE, GPIO_PIN_1, PortBIntHandler);
-    GPIOIntRegister(GPIO_PORTB_BASE, PortBIntHandler);
-
-    GPIOPinTypeGPIOInput(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);
-    //GPIOPinTypeGPIOOutput(GPIO_PORTB_BASE, GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7);
-
-    //GPIOPinWrite()
-
-    GPIOIntTypeSet(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1, GPIO_BOTH_EDGES);
-
-
-
-
-    GPIOIntEnable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
-
-
-
-
-
-
-}
 
 void
 clearDisplay(void) {
