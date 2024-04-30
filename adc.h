@@ -28,16 +28,12 @@
 #define BITS 40960 // 2^12 * 10
 #define VOLT_RANGE 33 // 3.3v * 10
 
-// Set in powers of 10 depending on how many floating points desired (min 10)
-#define YAW_ANGLE_SCALE 1000
+
 
 //********************************************************
 // Global variables
 //********************************************************
-int32_t yawAngle;
-uint16_t yawAngleSubDegree;
-int16_t yawCount;
-int32_t yawState;
+
 //********************************************************
 // Prototypes
 //********************************************************
