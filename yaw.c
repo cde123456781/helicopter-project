@@ -1,9 +1,9 @@
 /**
- * @file    yaw.h
+ * @file    yaw.c
  * @authors  Bryson Chen & Dylan Carlson
  * @date    29 April 2024
  *
- * This module defines all functions for yaw calculation of the ENCE361 Helicopter project
+ * This module defines all functions, variables and macros for yaw calculation of the ENCE361 Helicopter project
  *
 */
 
