@@ -11,12 +11,6 @@
 #include <stdint.h>
 
 #include "inc/hw_memmap.h"
-#include "driverlib/debug.h"
-
-#include "stdio.h"
-
-
-
 
 #include "utils/ustdlib.h"
 #include "OrbitOLED/OrbitOLEDInterface.h"
@@ -39,16 +33,18 @@ int32_t yawState;
 // Functions
 //********************************************************
 
+
+// Function for initialising the Orbit OLED display
 void
 initDisplay (void)
 {
-    // intialise the Orbit OLED display
     OLEDInitialise ();
 }
 
+
+// Function for clearing the display
 void
 clearDisplay(void) {
-    // Set each line on the OLED to blank
     char string[17] = "                ";
     OLEDStringDraw (string, 0, 0);
     OLEDStringDraw (string, 0, 1);
@@ -57,7 +53,7 @@ clearDisplay(void) {
 }
 
 
-
+// Function for displaying the mean value on the display
 void
 displayMeanVal(uint16_t meanVal, uint32_t count)
 {
@@ -66,11 +62,8 @@ displayMeanVal(uint16_t meanVal, uint32_t count)
 
     OLEDStringDraw ("ADC demo 1", 0, 0);
 
-    // Form a new string for the line.  The maximum width specified for the
-    //  number field ensures it is displayed right justified.
     usnprintf (string, sizeof(string), "Mean = %4d", meanVal);
 
-    // Update line on display.
     OLEDStringDraw (string, 0, 1);
 
     usnprintf (string, sizeof(string), "Sample# %5d", count);
@@ -78,37 +71,28 @@ displayMeanVal(uint16_t meanVal, uint32_t count)
 }
 
 
+// Function for displaying the mean value on the display
 void
 displayAltitude(int16_t percentageAltitude)
 {
 
-    char string[17];  // 16 characters across the display
+    char string[17];
 
-    //OLEDStringDraw ("Altitude %", 0, 0);
-
-    // Form a new string for the line.  The maximum width specified for the
-    //  number field ensures it is displayed right justified.
     usnprintf (string, sizeof(string), "altitude = %4d", percentageAltitude);
 
-    // Update line on display.
     OLEDStringDraw (string, 0, 2);
 
 }
 
 
-
+// Function for displaying the yaw angle on the display
 void
 displayYawAngle(int32_t yawAngle, uint16_t yawAngleSubDegree)
 {
-    char string[17];  // 16 characters across the display
+    char string[17];
 
-    //OLEDStringDraw ("Altitude %", 0, 0);
-
-    // Form a new string for the line.  The maximum width specified for the
-    //  number field ensures it is displayed right justified.
     usnprintf (string, sizeof(string), YAW_DISPLAY_STRING, yawAngle, yawAngleSubDegree);
 
-    // Update line on display.
     OLEDStringDraw (string, 0, 3);
 }
 

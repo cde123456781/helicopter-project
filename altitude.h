@@ -28,7 +28,7 @@ uint16_t helicopterLandedValue;
 // Set the helicopter's grounded value
 void setHelicopterLandedValue (uint16_t landedValue);
 
-// Calc percentage altitude
+// Calculate percentage altitude
 void calcPercentageAltitude(uint16_t meanVal, uint16_t volt);
 
 

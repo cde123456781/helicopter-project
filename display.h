@@ -14,9 +14,6 @@
 #include <stdint.h>
 
 #include "inc/hw_memmap.h"
-#include "driverlib/debug.h"
-
-#include "stdio.h"
 
 
 #include "utils/ustdlib.h"
@@ -40,11 +37,13 @@ void initDisplay (void);
 // Function for clearing the display
 void clearDisplay (void);
 
-// Function for displaying the mean value
+// Function for displaying the mean value on the display
 void displayMeanVal(uint16_t meanVal, uint32_t count);
 
+// Function for displaying the altitude on the display
 void displayAltitude(int16_t percentageAltitude);
 
+// Function for displaying the yaw angle on the displa
 void displayYawAngle(int32_t yawAngle, uint16_t yawAngleSubDegree);
 
 #endif //DISPLAY_H
