@@ -10,28 +10,14 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <stdio.h>
-//#include "inc/tm4c123gh6pm.h"
-#include "inc/hw_memmap.h"
-#include "inc/hw_types.h"
-#include "driverlib/adc.h"
-#include "driverlib/pwm.h"
-#include "driverlib/gpio.h"
-#include "driverlib/sysctl.h"
-#include "driverlib/systick.h"
-#include "driverlib/interrupt.h"
-#include "driverlib/debug.h"
-#include "utils/ustdlib.h"
-#include "circBufT.h"
-#include "OrbitOLED/OrbitOLEDInterface.h"
 
+#include "driverlib/pwm.h"
+
+#include "driverlib/debug.h"
 
 #include "driverlib/uart.h"
 #include "driverlib/pin_map.h"
-#include "buttons4.h"
-#include "inc/hw_ints.h"
-#include "stdio.h"
-#include "stdlib.h"
+
 #include "yaw.h"
 #include "adc.h"
 #include "systick.h"
