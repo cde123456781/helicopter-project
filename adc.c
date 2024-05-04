@@ -17,13 +17,12 @@
 #include "driverlib/interrupt.h"
 #include "driverlib/debug.h"
 #include "circBufT.h"
+#include "adc.h"
 
 #include "stdio.h"
 #include "stdlib.h"
-
 uint32_t ulValue;
-
-extern circBuf_t g_inBuffer;
+circBuf_t g_inBuffer;
 
 /*
 The handler for an ADC interrupt. Reads a discrete sample and writes it to 

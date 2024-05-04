@@ -85,7 +85,7 @@ void displayButtonState (char *butStr, char *stateStr,
 //*****************************************************************************
 // Global variables
 //*****************************************************************************
-circBuf_t g_inBuffer;        // Buffer of size BUF_SIZE integers (sample values)
+//circBuf_t g_inBuffer;        // Buffer of size BUF_SIZE integers (sample values)
 static uint32_t g_ulSampCnt;    // Counter for the interrupts
 
 char statusStr[MAX_STR_LEN + 1];
@@ -97,7 +97,6 @@ uint16_t helicopterLandedValue;
 
 int32_t testcount = 0;
 
-//uint32_t ulValue = 0;
 
 void
 initDebugLED(void)
