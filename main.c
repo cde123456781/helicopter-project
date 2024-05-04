@@ -34,15 +34,15 @@
 #include "stdlib.h"
 #include "yaw.h"
 #include "adc.h"
+#include "systick.h"
+#include "altitude.h"
+#include "display.h"
 
 //*****************************************************************************
 // Constants
 //*****************************************************************************
 #define BUF_SIZE 10
-#define SAMPLE_RATE_HZ 120
 
-#define SYSTICK_RATE_HZ 100
-#define SLOWTICK_RATE_HZ 4
 #define MAX_STR_LEN 100
 
 //---USB Serial comms: UART0, Rx:PA0 , Tx:PA1
@@ -62,38 +62,19 @@
 #define VOLT_RANGE 33 // 3.3v * 10
 
 
-//// Yaw Constants
-//#define NUM_SLOTS 112
-//#define TRIGGERS_PER_SLOT 4
-
-// Set in powers of 10 depending on how many floating points desired (min 10)
-//#define YAW_ANGLE_SCALE 1000
-#define YAW_DISPLAY_STRING "Yaw = %3d.%03d  "
-
 //********************************************************
 // Prototypes
 //********************************************************
-void SysTickIntHandler (void);
-void initClock (void);
-void initSysTick (void);
-void initDisplay (void);
+
 void initialiseUSB_UART (void);
 void UARTSend (char *pucBuffer);
-void displayButtonState (char *butStr, char *stateStr,
-    uint8_t numPushes, uint8_t charLine);
 
 //*****************************************************************************
 // Global variables
 //*****************************************************************************
-//circBuf_t g_inBuffer;        // Buffer of size BUF_SIZE integers (sample values)
-static uint32_t g_ulSampCnt;    // Counter for the interrupts
+circBuf_t g_inBuffer;        // Buffer of size BUF_SIZE integers (sample values)
 
 char statusStr[MAX_STR_LEN + 1];
-volatile uint8_t slowTick = false;
-
-int16_t percentageAltitude;
-
-uint16_t helicopterLandedValue;
 
 int32_t testcount = 0;
 
@@ -119,99 +100,6 @@ void
 debugLED(void)
 {
     GPIOPinWrite(GPIO_PORTF_BASE,  BLUE_LED, BLUE_LED);
-}
-
-//*****************************************************************************
-//
-// The interrupt handler for the for SysTick interrupt.
-//
-//*****************************************************************************
-void
-SysTickIntHandler(void)
-{
-    //
-    // Initiate a conversion
-    //
-    ADCProcessorTrigger(ADC1_BASE, 3);
-    g_ulSampCnt++;
-
-    static uint8_t tickCount = 0;
-    const uint8_t ticksPerSlow = SYSTICK_RATE_HZ / SLOWTICK_RATE_HZ;
-
-    updateButtons ();       // Poll the buttons
-    if (++tickCount >= ticksPerSlow)
-    {                       // Signal a slow tick
-        tickCount = 0;
-        slowTick = true;
-    }
-}
-
-
-//*****************************************************************************
-// Initialisation functions for the clock (incl. SysTick), ADC, display
-//*****************************************************************************
-void
-initClock (void)
-{
-    // Set the clock rate to 20 MHz
-    SysCtlClockSet (SYSCTL_SYSDIV_10 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN |
-                   SYSCTL_XTAL_16MHZ);
-    //
-    // Set up the period for the SysTick timer.  The SysTick timer period is
-    // set as a function of the system clock.
-    SysTickPeriodSet(SysCtlClockGet() / SAMPLE_RATE_HZ);
-    //
-    // Register the interrupt handler
-    SysTickIntRegister(SysTickIntHandler);
-    //
-    //SysTickIntRegister(ButtonIntHandler);
-    // Enable interrupt and device
-    SysTickIntEnable();
-    SysTickEnable();
-}
-
-
-void
-initDisplay (void)
-{
-    // intialise the Orbit OLED display
-    OLEDInitialise ();
-}
-
-
-
-
-void
-clearDisplay(void) {
-    char string[17] = "                ";
-    OLEDStringDraw (string, 0, 0);
-    OLEDStringDraw (string, 0, 1);
-    OLEDStringDraw (string, 0, 2);
-    OLEDStringDraw (string, 0, 3);
-}
-
-//*****************************************************************************
-//
-// Function to display the mean ADC value (10-bit value, note) and sample count.
-//
-//*****************************************************************************
-void
-displayMeanVal(uint16_t meanVal, uint32_t count)
-{
-
-    char string[17];  // 16 characters across the display
-
-    OLEDStringDraw ("ADC demo 1", 0, 0);
-
-    // Form a new string for the line.  The maximum width specified for the
-    //  number field ensures it is displayed right justified.
-    usnprintf (string, sizeof(string), "Mean = %4d", meanVal);
-
-    // Update line on display.
-    OLEDStringDraw (string, 0, 1);
-
-    usnprintf (string, sizeof(string), "Sample# %5d", count);
-    OLEDStringDraw (string, 0, 3);
 }
 
 void
@@ -250,57 +138,6 @@ UARTSend (char *pucBuffer)
         UARTCharPut(UART_USB_BASE, *pucBuffer);
         pucBuffer++;
     }
-}
-
-
-
-
-// Set the helicopter's grounded value
-void
-setHelicopterLandedValue (uint16_t landedValue)
-{
-    helicopterLandedValue = landedValue;
-}
-
-// Calc percentage altitude
-void
-calcPercentageAltitude(uint16_t meanVal, uint16_t volt)
-{
-    percentageAltitude = (((helicopterLandedValue - meanVal) * 100) / volt);
-    //debugLED();
-
-}
-
-void
-displayAltitude(void)
-{
-
-    char string[17];  // 16 characters across the display
-
-    //OLEDStringDraw ("Altitude %", 0, 0);
-
-    // Form a new string for the line.  The maximum width specified for the
-    //  number field ensures it is displayed right justified.
-    usnprintf (string, sizeof(string), "altitude = %4d", percentageAltitude);
-
-    // Update line on display.
-    OLEDStringDraw (string, 0, 2);
-
-}
-
-void
-displayYawAngle(void)
-{
-    char string[17];  // 16 characters across the display
-
-    //OLEDStringDraw ("Altitude %", 0, 0);
-
-    // Form a new string for the line.  The maximum width specified for the
-    //  number field ensures it is displayed right justified.
-    usnprintf (string, sizeof(string), YAW_DISPLAY_STRING, yawAngle, yawAngleSubDegree);
-
-    // Update line on display.
-    OLEDStringDraw (string, 0, 3);
 }
 
 uint32_t
@@ -361,8 +198,8 @@ main(void)
 
         if (displayMode == 0)
          {
-             displayAltitude();
-             displayYawAngle();
+             displayAltitude(percentageAltitude);
+             displayYawAngle(yawAngle, yawAngleSubDegree);
          } else if (displayMode == 1) {
              displayMeanVal (meanVal, g_ulSampCnt);
          }

@@ -8,11 +8,8 @@
 */
 
 
-#ifndef ALTITUDE_H
-#define ALTITUDE_H
-
 #include <stdint.h>
-
+#include "altitude.h"
 
 //********************************************************
 // Global variables

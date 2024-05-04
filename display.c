@@ -14,13 +14,14 @@
 
 #include "utils/ustdlib.h"
 #include "OrbitOLED/OrbitOLEDInterface.h"
+#include "display.h"
 
 //********************************************************
 // Macros
 //********************************************************
 
 
-#define YAW_DISPLAY_STRING "Yaw = %3d.%03d  "
+#define YAW_DISPLAY_STRING "Yaw = %3d.%03d  " //3dp for YAW_ANGLE_SCALE = 1000
 
 //********************************************************
 // Functions

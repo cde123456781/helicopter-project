@@ -8,9 +8,6 @@
 */
 
 
-#ifndef SYSTICK_H
-#define SYSTICK_H
-
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -18,6 +15,8 @@
 #include "driverlib/sysctl.h"
 #include "driverlib/systick.h"
 #include "buttons4.h"
+#include "inc/hw_memmap.h"
+#include "systick.h"
 
 
 
@@ -27,13 +26,13 @@
 
 
 #define SYSTICK_RATE_HZ 100
+#define SAMPLE_RATE_HZ 120
 #define SLOWTICK_RATE_HZ 4
 
 //********************************************************
 // Global variables
 //********************************************************
 uint32_t g_ulSampCnt;
-volatile uint8_t slowTick = false;
 
 
 //********************************************************

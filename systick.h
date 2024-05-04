@@ -11,14 +11,22 @@
 #define SYSTICK_H
 
 #include <stdint.h>
-#define SLOWTICK_RATE_HZ 4
+#include <stdbool.h>
 
+#include "driverlib/adc.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/systick.h"
+#include "buttons4.h"
+#include "inc/hw_memmap.h"
+
+#define SLOWTICK_RATE_HZ 4
+#define SAMPLE_RATE_HZ 120
 #define SYSTICK_RATE_HZ 100
 //********************************************************
 // Global variables
 //********************************************************
 
-extern g_ulSampCnt;
+uint32_t g_ulSampCnt;
 volatile uint8_t slowTick;
 
 
@@ -31,6 +39,6 @@ void SysTickIntHandler(void);
 
 
 // This function initialises the systick timer and interrupts
-void initClock (void)
+void initClock (void);
 
 #endif //SYSTICK_H

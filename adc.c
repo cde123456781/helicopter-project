@@ -77,4 +77,5 @@ void initADC (void)
     //
     // Enable interrupts for ADC1 sequence 3 (clears any outstanding interrupts)
     ADCIntEnable(ADC1_BASE, 3);
+
 }
