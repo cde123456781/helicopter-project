@@ -18,9 +18,9 @@
 //********************************************************
 // Global variables
 //********************************************************
-int16_t percentageAltitude;
+extern int16_t percentageAltitude;
 
-uint16_t helicopterLandedValue;
+extern uint16_t helicopterLandedValue;
 //********************************************************
 // Prototypes
 //********************************************************
