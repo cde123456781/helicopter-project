@@ -12,32 +12,24 @@
 #define DISPLAY_H
 
 #include <stdint.h>
-#include <stdbool.h>
-#include <stdio.h>
 
 #include "inc/hw_memmap.h"
-#include "driverlib/gpio.h"
-#include "driverlib/sysctl.h"
-#include "driverlib/interrupt.h"
 #include "driverlib/debug.h"
 
 #include "stdio.h"
-#include "stdlib.h"
-
 
 
 #include "utils/ustdlib.h"
 #include "OrbitOLED/OrbitOLEDInterface.h"
 
+//********************************************************
+// Macros
+//********************************************************
+
+
 #define YAW_DISPLAY_STRING "Yaw = %3d.%03d  "
 
-//********************************************************
-// Global variables
-//********************************************************
-int32_t yawAngle;
-uint16_t yawAngleSubDegree;
-int16_t yawCount;
-int32_t yawState;
+
 //********************************************************
 // Prototypes
 //********************************************************
@@ -51,8 +43,8 @@ void clearDisplay (void);
 // Function for displaying the mean value
 void displayMeanVal(uint16_t meanVal, uint32_t count);
 
-void displayAltitude(void);
+void displayAltitude(int16_t percentageAltitude);
 
-void displayYawAngle(void);
+void displayYawAngle(int32_t yawAngle, uint16_t yawAngleSubDegree);
 
 #endif //DISPLAY_H
