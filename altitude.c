@@ -1,9 +1,9 @@
 /**
- * @file    altitude.h
+ * @file    altitude.c
  * @authors  Bryson Chen & Dylan Carlson
- * @date    30 April 2024
+ * @date    5 May 2024
  *
- * This header file contains all definitions for functions, variables and macros for altitude related calculations of the ENCE361 Helicopter project
+ * This modules contains all functions, variables and macros for altitude related calculations of the ENCE361 Helicopter project
  *
 */
 
@@ -12,7 +12,6 @@
 #define ALTITUDE_H
 
 #include <stdint.h>
-
 
 
 //********************************************************
@@ -26,11 +25,18 @@ uint16_t helicopterLandedValue;
 //********************************************************
 
 // Set the helicopter's grounded value
-void setHelicopterLandedValue (uint16_t landedValue);
+void
+setHelicopterLandedValue (uint16_t landedValue)
+{
+    helicopterLandedValue = landedValue;
+}
 
 // Calculate percentage altitude
-void calcPercentageAltitude(uint16_t meanVal, uint16_t volt);
+void
+calcPercentageAltitude(uint16_t meanVal, uint16_t volt)
+{
+    percentageAltitude = (((helicopterLandedValue - meanVal) * 100) / volt);
+
+}
 
 
-
-#endif //ALTITUDE_H
