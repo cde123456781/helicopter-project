@@ -20,23 +20,30 @@
 #include "driverlib/sysctl.h"
 #include "driverlib/interrupt.h"
 #include "driverlib/debug.h"
+#include "circBufT.h"
 
 #include "stdio.h"
 #include "stdlib.h"
 
 
-#define BITS 40960 // 2^12 * 10
-#define VOLT_RANGE 33 // 3.3v * 10
-
-
-
 //********************************************************
 // Global variables
 //********************************************************
-
+uint32_t ulValue;
 //********************************************************
 // Prototypes
 //********************************************************
+/*
+The handler for an ADC interrupt. Reads a discrete sample and writes it to 
+a circular buffer.
+*/
+void ADCIntHandler(void);
+
+/*
+Initialises the analog-to-digital converter.
+*/
+void initADC (void);
+
 
 
 #endif //ADC_H

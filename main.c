@@ -1,13 +1,12 @@
-//*****************************************************************************
-//
-// ADCdemo1.c - Simple interrupt driven program which samples with AIN0
-//
-// Author:  P.J. Bones  UCECE
-// Last modified:   8.2.2018
-//
-//*****************************************************************************
-// Based on the 'convert' series from 2016
-//*****************************************************************************
+/**
+ * @file    main.c
+ * @authors  Bryson Chen & Dylan Carlson
+ * @date    30 April 2024
+ *
+ * This is the main.c file for the ENCE361 helicopter control project.
+ * Designed for use on the Tiva C series board (tm4c123gh6pm) by Texas Instruments
+ *
+*/
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -34,6 +33,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "yaw.h"
+#include "adc.h"
 
 //*****************************************************************************
 // Constants
@@ -85,7 +85,7 @@ void displayButtonState (char *butStr, char *stateStr,
 //*****************************************************************************
 // Global variables
 //*****************************************************************************
-static circBuf_t g_inBuffer;        // Buffer of size BUF_SIZE integers (sample values)
+circBuf_t g_inBuffer;        // Buffer of size BUF_SIZE integers (sample values)
 static uint32_t g_ulSampCnt;    // Counter for the interrupts
 
 char statusStr[MAX_STR_LEN + 1];
@@ -97,7 +97,7 @@ uint16_t helicopterLandedValue;
 
 int32_t testcount = 0;
 
-uint32_t ulValue = 0;
+//uint32_t ulValue = 0;
 
 void
 initDebugLED(void)
@@ -147,43 +147,6 @@ SysTickIntHandler(void)
     }
 }
 
-/*void
-ButtonIntHandler(void)
-{
-    updateButtons();
-}*/
-
-//*****************************************************************************
-//
-// The handler for the ADC conversion complete interrupt.
-// Writes to the circular buffer.
-//
-//*****************************************************************************
-void
-ADCIntHandler(void)
-{
-    //uint32_t ulValue;
-
-    //debugLED
-    //debugLED();
-    // Get the single sample from ADC1.  ADC_BASE is defined in
-    // inc/hw_memmap.h
-    ADCSequenceDataGet(ADC1_BASE, 3, &ulValue);
-    //
-    // Place it in the circular buffer (advancing write index)
-    writeCircBuf (&g_inBuffer, ulValue);
-    //
-
-    // Clean up, clearing the interrupt
-    ADCIntClear(ADC1_BASE, 3);
-}
-
-
-
-
-
-
-
 
 //*****************************************************************************
 // Initialisation functions for the clock (incl. SysTick), ADC, display
@@ -208,44 +171,6 @@ initClock (void)
     SysTickEnable();
 }
 
-void
-initADC (void)
-{
-    //
-    // The ADC1 peripheral must be enabled for configuration and use.
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC1);
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
-
-    // Enable sample sequence 3 with a processor signal trigger.  Sequence 3
-    // will do a single sample when the processor sends a signal to start the
-    // conversion.
-    ADCSequenceConfigure(ADC1_BASE, 3, ADC_TRIGGER_PROCESSOR, 0);
-
-
-    //
-    // Configure step 0 on sequence 3.  Sample channel 9 (ADC_CTL_CH9) in
-    // single-ended mode (default) and configure the interrupt flag
-    // (ADC_CTL_IE) to be set when the sample is done.  Tell the ADC logic
-    // that this is the last conversion on sequence 3 (ADC_CTL_END).  Sequence
-    // 3 has only one programmable step.  Sequence 1 and 2 have 4 steps, and
-    // sequence 0 has 8 programmable steps.  Since we are only doing a single
-    // conversion using sequence 3 we will only configure step 0.  For more
-    // on the ADC sequences and steps, refer to the LM3S1968 datasheet.
-    ADCSequenceStepConfigure(ADC1_BASE, 3, 0, ADC_CTL_CH9 | ADC_CTL_IE |
-                             ADC_CTL_END);
-
-    //
-    // Since sample sequence 3 is now configured, it must be enabled.
-    ADCSequenceEnable(ADC1_BASE, 3);
-
-    //
-    // Register the interrupt handler
-    ADCIntRegister (ADC1_BASE, 3, ADCIntHandler);
-
-    //
-    // Enable interrupts for ADC1 sequence 3 (clears any outstanding interrupts)
-    ADCIntEnable(ADC1_BASE, 3);
-}
 
 void
 initDisplay (void)
