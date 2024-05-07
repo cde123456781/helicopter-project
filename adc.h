@@ -31,6 +31,16 @@
 //********************************************************
 uint32_t ulValue;
 circBuf_t g_inBuffer;
+
+//*****************************************************************************
+// Constants
+//*****************************************************************************
+
+#define BUF_SIZE 10
+#define BITS 40960 // 2^12 * 10
+#define VOLT_RANGE 33 // 3.3v * 10
+
+
 //********************************************************
 // Prototypes
 //********************************************************
@@ -46,5 +56,15 @@ Initialises the analog-to-digital converter.
 void initADC (void);
 
 
+/*
+ * Calculates the mean of the values stored in the circular buffer
+ */
+uint32_t calcMean(void);
+
+
+/*
+ * Calculates and returns the ADC value for 1V
+ */
+uint16_t getVolt();
 
 #endif //ADC_H

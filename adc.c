@@ -21,8 +21,29 @@
 
 #include "stdio.h"
 #include "stdlib.h"
+
+
+
+//********************************************************
+// Global variables
+//********************************************************
+
 uint32_t ulValue;
 circBuf_t g_inBuffer;
+
+
+
+//*****************************************************************************
+// Constants
+//*****************************************************************************
+
+#define BUF_SIZE 10
+#define BITS 40960 // 2^12 * 10
+#define VOLT_RANGE 33 // 3.3v * 10
+
+//*****************************************************************************
+// Functions
+//*****************************************************************************
 
 /*
 The handler for an ADC interrupt. Reads a discrete sample and writes it to 
@@ -79,3 +100,31 @@ void initADC (void)
     ADCIntEnable(ADC1_BASE, 3);
 
 }
+
+
+
+/*
+ * Calculates the mean of the values stored in the circular buffer
+ */
+uint32_t calcMean(void)
+{
+
+    uint16_t i;
+
+    uint16_t sum = 0;
+    for (i = 0; i < BUF_SIZE; i++)
+        sum = sum + readCircBuf (&g_inBuffer);
+
+    return (2 * sum + BUF_SIZE) / 2 / BUF_SIZE;
+}
+
+
+/*
+ * Calculates and returns the ADC value for 1V
+ */
+uint16_t getVolt()
+{
+    return BITS/VOLT_RANGE;
+}
+
+

@@ -27,7 +27,7 @@
 //*****************************************************************************
 // Constants
 //*****************************************************************************
-#define BUF_SIZE 10
+
 
 #define MAX_STR_LEN 100
 
@@ -42,10 +42,6 @@
 #define UART_USB_GPIO_PINS      UART_USB_GPIO_PIN_RX | UART_USB_GPIO_PIN_TX
 
 #define BLUE_LED  GPIO_PIN_2
-
-// ADC constants
-#define BITS 40960 // 2^12 * 10
-#define VOLT_RANGE 33 // 3.3v * 10
 
 
 //********************************************************
@@ -126,21 +122,6 @@ UARTSend (char *pucBuffer)
     }
 }
 
-uint32_t
-calcMean(void)
-{
-
-    uint16_t i;
-    // Background task: calculate the (approximate) mean of the values in the
-    // circular buffer
-    uint16_t sum = 0;
-    for (i = 0; i < BUF_SIZE; i++)
-        sum = sum + readCircBuf (&g_inBuffer);
-    // Calculate and display the rounded mean of the buffer contents
-
-    //displayMeanVal (meanVal, g_ulSampCnt);
-    return (2 * sum + BUF_SIZE) / 2 / BUF_SIZE;
-}
 
 
 int
@@ -161,7 +142,7 @@ main(void)
 
     uint16_t meanVal;
 
-    uint16_t volt = BITS/VOLT_RANGE; //approx 1241
+    uint16_t volt = getVolt(); //approx 1241
 
 
     SysCtlDelay (SysCtlClockGet() / 6);
