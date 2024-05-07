@@ -144,6 +144,8 @@ main(void)
 
     uint16_t volt = getVolt(); //approx 1241
 
+    uint32_t temp = SysCtlClockGet();
+
 
     SysCtlDelay (SysCtlClockGet() / 6);
 
@@ -193,15 +195,22 @@ main(void)
             slowTick = false;
             // Form and send a status message to the console
 
+            /*
             usprintf (statusStr, "Mean=%4d sample# =%5d | \r\n", meanVal, g_ulSampCnt);
             UARTSend (statusStr);
             usprintf (statusStr, "Altitude=%4d | \r\n", percentageAltitude);
             UARTSend (statusStr);
             usprintf (statusStr, "buffVal=%4d | \r\n", ulValue);
             UARTSend (statusStr);
+            */
+
+            usprintf (statusStr, "buffVal=%4d | \r\n", temp);
+            UARTSend (statusStr);
 
 
         }
+
+        temp = SysCtlClockGet();
 
     }
 }
