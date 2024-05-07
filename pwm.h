@@ -7,8 +7,8 @@
  *
 */
 
-#ifndef SYSTICK_H
-#define SYSTICK_H
+#ifndef PWM_H
+#define PWM_H
 
 
 #include <stdint.h>
@@ -23,7 +23,6 @@
 
 
 #include "stdlib.h"
-#include "pwm.h"
 
 
 //********************************************************
@@ -106,9 +105,29 @@ initialiseMainPWM (void);
 void initialiseTailPWM (void);
 
 
+/*
+ * Enable output for the Tail PWM
+ */
+void enableTailPWMOutput (void);
+
+/*
+ * Enable output for the Main PWM
+ */
+void enableMainPWMOutput (void);
+
+
+/*
+ * Disable output for the Main PWM
+ */
+void disableMainPWMOutput (void);
+
+/*
+ * Disable output for the Tail PWM
+ */
+void disableTailPWMOutput (void);
 
 
 
-#endif //SYSTICK_H
+#endif //PWM_H
 
 

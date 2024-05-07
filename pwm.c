@@ -111,10 +111,9 @@ setTailPWM (uint8_t desiredDuty)
 
 
 
-/*********************************************************
- * initialisePWM
- * M0PWM7 (J4-05, PC5) is used for the main rotor motor
- *********************************************************/
+/*
+ * Initialise the PWM for the main motor
+ */
 void
 initialiseMainPWM (void)
 {
@@ -142,6 +141,10 @@ initialiseMainPWM (void)
 }
 
 
+
+/*
+ * Initialise the PWM for the tail motor
+ */
 void initialiseTailPWM (void)
 {
     SysCtlPeripheralEnable(PWM_TAIL_PERIPH_PWM);
@@ -162,6 +165,39 @@ void initialiseTailPWM (void)
     PWMOutputState(PWM_TAIL_BASE, PWM_TAIL_OUTBIT, false);
 }
 
+
+/*
+ * Enable output for the Tail PWM
+ */
+void enableTailPWMOutput (void)
+{
+    PWMOutputState(PWM_TAIL_BASE, PWM_TAIL_OUTBIT, true);
+}
+
+/*
+ * Enable output for the Main PWM
+ */
+void enableMainPWMOutput (void)
+{
+    PWMOutputState(PWM_MAIN_BASE, PWM_MAIN_OUTBIT, true);
+}
+
+
+/*
+ * Disable output for the Main PWM
+ */
+void disableMainPWMOutput (void)
+{
+    PWMOutputState(PWM_MAIN_BASE, PWM_MAIN_OUTBIT, false);
+}
+
+/*
+ * Disable output for the Tail PWM
+ */
+void disableTailPWMOutput (void)
+{
+    PWMOutputState(PWM_TAIL_BASE, PWM_TAIL_OUTBIT, false);
+}
 
 
 
