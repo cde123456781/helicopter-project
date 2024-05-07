@@ -44,8 +44,9 @@ uint8_t mainDutyCycle;
 
 #define DELTA_T
 
-// Check lecture at 11:20
-#define MAX_OUTPUT 70 // WHY? why not 100? Are we just going to have PWM only set to 70?
+
+#define MAX_OUTPUT 70 // HeliSims are limited to 70 (lect 11.20). May need to change this for
+                      // actual scenario??
 #define MIN_OUTPUT 0    
 
 #define GRAVITY 33
