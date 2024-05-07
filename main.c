@@ -144,8 +144,6 @@ main(void)
 
     uint16_t volt = getVolt(); //approx 1241
 
-    uint32_t temp = SysCtlClockGet();
-
 
     SysCtlDelay (SysCtlClockGet() / 6);
 
@@ -210,7 +208,7 @@ main(void)
 
         }
 
-        temp = SysCtlClockGet();
+
 
     }
 }
