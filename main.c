@@ -23,6 +23,7 @@
 #include "systick.h"
 #include "altitude.h"
 #include "display.h"
+#include "control.h"
 
 //*****************************************************************************
 // Constants
@@ -59,6 +60,12 @@ circBuf_t g_inBuffer;        // Buffer of size BUF_SIZE integers (sample values)
 char statusStr[MAX_STR_LEN + 1];
 
 int32_t testcount = 0;
+
+float yawSetpoint = 0;     //used for control functions
+float yawSensorValue = 0;  //
+
+float altSetpoint = 0;     //used for control functions
+float altSensorValue = 0;  //
 
 
 void
@@ -122,6 +129,42 @@ UARTSend (char *pucBuffer)
     }
 }
 
+void
+pollButtons(void)
+{
+    if (checkButton (RIGHT) == PUSHED)
+     {
+        yawSetpoint += 15.0;
+        if (yawSetpoint < -180) {
+            yawSetpoint = 180 + (yawSetpoint - -180) ;
+        }
+     }
+
+    if(checkButton (LEFT) == PUSHED)
+    {
+        //debugLED(); // LED not on upon start, but on after left button pressed
+        yawSetpoint -= 15.0;
+        if (yawSetpoint > 180) {
+            yawSetpoint = -180 + (yawSetpoint - 180) ;
+        }
+    }
+
+    if(checkButton (UP) == PUSHED)
+    {
+        altSetpoint += 10.0;
+        if (altSetpoint > 100) {
+            altSetpoint = 100;
+        }
+    }
+
+    if(checkButton (DOWN) == PUSHED)
+    {
+        altSetpoint -= 10.0;
+        if (altSetpoint < 0) {
+            altSetpoint = 0;
+        }
+    }
+}
 
 
 int
@@ -144,7 +187,6 @@ main(void)
 
     uint16_t volt = getVolt(); //approx 1241
 
-
     SysCtlDelay (SysCtlClockGet() / 6);
 
     meanVal = calcMean();
@@ -157,32 +199,35 @@ main(void)
     {
         IntMasterDisable();
         calculateYawAngle();
+        yawSensorValue = yawAngle;
+
         meanVal = calcMean();
 
         calcPercentageAltitude(meanVal, volt);
+        altSensorValue = percentageAltitude;
         IntMasterEnable();
 
-
-        if (displayMode == 0)
-         {
-             displayAltitude(percentageAltitude);
-             displayYawAngle(yawAngle, yawAngleSubDegree);
-         } else if (displayMode == 1) {
-             displayMeanVal (meanVal, g_ulSampCnt);
-         }
-
-        if(checkButton (LEFT) == PUSHED)
-        {
-            //debugLED(); // LED not on upon start, but on after left button pressed
-            setHelicopterLandedValue(meanVal);
-        }
-
-        if(checkButton (UP) == PUSHED)
-        {
-            clearDisplay();
-            displayMode++;
-            displayMode = displayMode % 3;
-        }
+        pollButtons();
+//        if (displayMode == 0)
+//         {
+//             displayAltitude(percentageAltitude);
+//             displayYawAngle(yawAngle, yawAngleSubDegree);
+//         } else if (displayMode == 1) {
+//             displayMeanVal (meanVal, g_ulSampCnt);
+//         }
+//
+//        if(checkButton (LEFT) == PUSHED)
+//        {
+//            //debugLED(); // LED not on upon start, but on after left button pressed
+//            setHelicopterLandedValue(meanVal);
+//        }
+//
+//        if(checkButton (UP) == PUSHED)
+//        {
+//            clearDisplay();
+//            displayMode++;
+//            displayMode = displayMode % 3;
+//        }
 
 
 

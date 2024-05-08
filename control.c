@@ -46,7 +46,7 @@ uint8_t mainDutyCycle;
 
 
 #define MAX_OUTPUT 70 // HeliSims are limited to 70 (lect 11.20). May need to change this for
-                      // actual scenario??
+                      // actual?
 #define MIN_OUTPUT 0    
 
 #define GRAVITY 33

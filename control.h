@@ -30,6 +30,9 @@
 uint8_t tailDutyCycle;
 uint8_t mainDutyCycle;
 
+float setpoint;
+float sensorValue;
+
 //*****************************************************************************
 // Constants
 //*****************************************************************************
@@ -62,7 +65,7 @@ getMainDutyCycle (float setPoint, float sensorValue);
 float
 getTailDutyCycle (float setPoint, float sensorValue, float mainDutyCycle);
 
-
+#endif //CONTROL_H
 
 
 
