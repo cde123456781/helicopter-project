@@ -19,6 +19,7 @@
 
 #include "stdlib.h"
 #include "pwm.h"
+#include "control.h"
 
 
 //********************************************************
