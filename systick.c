@@ -18,6 +18,8 @@
 #include "inc/hw_memmap.h"
 #include "systick.h"
 #include "pwm.h"
+#include "uart.h"
+#include "control.h"
 
 
 
@@ -28,14 +30,13 @@
 
 #define SYSTICK_RATE_HZ 100
 #define SAMPLE_RATE_HZ 120
-#define SLOWTICK_RATE_HZ 4
+
 
 //********************************************************
 // Global variables
 //********************************************************
-uint32_t g_ulSampCnt;
+uint32_t numSamples;
 
-uint8_t controlFlag;
 
 //********************************************************
 // Functions
@@ -50,18 +51,18 @@ SysTickIntHandler(void)
     // Initiate a conversion
     //
     ADCProcessorTrigger(ADC1_BASE, 3);
-    g_ulSampCnt++;
+    numSamples++;
 
     controlFlag = true;
 
     static uint8_t tickCount = 0;
-    const uint8_t ticksPerSlow = SYSTICK_RATE_HZ / SLOWTICK_RATE_HZ;
+    const uint8_t ticksForUART = SYSTICK_RATE_HZ / UART_DISPLAY_RATE;
 
     updateButtons ();       // Poll the buttons
-    if (++tickCount >= ticksPerSlow)
+    if (++tickCount >= ticksForUART)
     {                       // Signal a slow tick
         tickCount = 0;
-        slowTick = true;
+        sendUARTFlag = true;
     }
 }
 

@@ -19,16 +19,23 @@
 #include "buttons4.h"
 #include "inc/hw_memmap.h"
 
-#define SLOWTICK_RATE_HZ 4
+#include "pwm.h"
+#include "uart.h"
+
+//********************************************************
+// Macros
+//********************************************************
+
 #define SAMPLE_RATE_HZ 120
 #define SYSTICK_RATE_HZ 100
+
+
 //********************************************************
 // Global variables
 //********************************************************
 
-uint32_t g_ulSampCnt;
-volatile uint8_t slowTick;
-uint8_t controlFlag;
+uint32_t numSamples;
+
 
 //********************************************************
 // Prototypes

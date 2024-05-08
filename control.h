@@ -29,6 +29,13 @@
 
 uint8_t tailDutyCycle;
 uint8_t mainDutyCycle;
+volatile uint8_t controlFlag;
+
+float tailSetPoint;     //used for control functions
+float tailSensorValue;  //
+
+float mainSetPoint;     //used for control functions
+float mainSensorValue;  //
 
 //*****************************************************************************
 // Constants

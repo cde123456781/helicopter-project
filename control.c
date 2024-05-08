@@ -23,12 +23,26 @@
 
 
 //********************************************************
-// Global variables
+// Constants
 //********************************************************
 
 #define MAX_OUTPUT 70 // HeliSims are limited to 70 (lect 11.20). May need to change this for
                       // actual?
 #define MIN_OUTPUT 0    
+
+
+//********************************************************
+// Global variables
+//********************************************************
+
+uint8_t tailDutyCycle;
+uint8_t mainDutyCycle;
+
+float tailSetPoint = 0;     //used for control functions
+float tailSensorValue = 0;  //
+
+float mainSetPoint = 10;     //used for control functions
+float mainSensorValue = 0;  //
 
 
 //*****************************************************************************
@@ -98,6 +112,22 @@ float getTailDutyCycle (float setPoint, float sensorValue, float mainDutyCycle)
 
 }
 
+
+
+void
+checkControlFlag(void)
+{
+    if (controlFlag == true)
+    {
+        mainDutyCycle = getMainDutyCycle (mainSetPoint, mainSensorValue);
+
+        tailDutyCycle = getTailDutyCycle (tailSetPoint, tailSensorValue, mainDutyCycle);
+        setTailPWM(tailDutyCycle);
+        setMainPWM(mainDutyCycle);
+    }
+
+
+}
 
 
 

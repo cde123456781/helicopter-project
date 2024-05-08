@@ -11,12 +11,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+
+// I'm tired as fuck, is there a reason why we still have this include when we're including "pwm.h"?
 #include "driverlib/pwm.h"
 
 #include "driverlib/debug.h"
 
-#include "driverlib/uart.h"
-#include "driverlib/pin_map.h"
 
 #include "yaw.h"
 #include "adc.h"
@@ -25,48 +25,18 @@
 #include "display.h"
 #include "control.h"
 #include "pwm.h"
+#include "uart.h"
 
-//*****************************************************************************
-// Constants
-//*****************************************************************************
-
-
-#define MAX_STR_LEN 100
-
-//---USB Serial comms: UART0, Rx:PA0 , Tx:PA1
-#define BAUD_RATE 9600
-#define UART_USB_BASE           UART0_BASE
-#define UART_USB_PERIPH_UART    SYSCTL_PERIPH_UART0
-#define UART_USB_PERIPH_GPIO    SYSCTL_PERIPH_GPIOA
-#define UART_USB_GPIO_BASE      GPIO_PORTA_BASE
-#define UART_USB_GPIO_PIN_RX    GPIO_PIN_0
-#define UART_USB_GPIO_PIN_TX    GPIO_PIN_1
-#define UART_USB_GPIO_PINS      UART_USB_GPIO_PIN_RX | UART_USB_GPIO_PIN_TX
 
 #define BLUE_LED  GPIO_PIN_2
 
 
-//********************************************************
-// Prototypes
-//********************************************************
-
-void initialiseUSB_UART (void);
-void UARTSend (char *pucBuffer);
-
 //*****************************************************************************
 // Global variables
 //*****************************************************************************
+
+// Keeping this here instead of having it in circBufT.c cause that's made by some other fucker
 circBuf_t g_inBuffer;        // Buffer of size BUF_SIZE integers (sample values)
-
-char statusStr[MAX_STR_LEN + 1];
-
-int32_t testcount = 0;
-
-float tailSetPoint = 0;     //used for control functions
-float tailSensorValue = 0;  //
-
-float mainSetPoint = 10;     //used for control functions
-float mainSensorValue = 0;  //
 
 
 void
@@ -92,44 +62,9 @@ debugLED(void)
     GPIOPinWrite(GPIO_PORTF_BASE,  BLUE_LED, BLUE_LED);
 }
 
-void
-initialiseUSB_UART (void)
-{
-    //
-    // Enable GPIO port A which is used for UART0 pins.
-    //
-    SysCtlPeripheralEnable(UART_USB_PERIPH_UART);
-    SysCtlPeripheralEnable(UART_USB_PERIPH_GPIO);
-    //
-    // Select the alternate (UART) function for these pins.
-    //
-    GPIOPinTypeUART(UART_USB_GPIO_BASE, UART_USB_GPIO_PINS);
-    GPIOPinConfigure (GPIO_PA0_U0RX);
-    GPIOPinConfigure (GPIO_PA1_U0TX);
-
-    UARTConfigSetExpClk(UART_USB_BASE, SysCtlClockGet(), BAUD_RATE,
-            UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
-            UART_CONFIG_PAR_NONE);
-    UARTFIFOEnable(UART_USB_BASE);
-    UARTEnable(UART_USB_BASE);
-}
 
 
-//**********************************************************************
-// Transmit a string via UART0
-//**********************************************************************
-void
-UARTSend (char *pucBuffer)
-{
-    // Loop while there are more characters to send.
-    while(*pucBuffer)
-    {
-        // Write the next character to the UART Tx FIFO.
-        UARTCharPut(UART_USB_BASE, *pucBuffer);
-        pucBuffer++;
-    }
-}
-
+// Could probably be moved to a buttons.c module
 void
 pollButtons(void)
 {
@@ -167,20 +102,7 @@ pollButtons(void)
     }
 }
 
-void
-checkControlFlag(void)
-{
-    if (controlFlag == true)
-    {
-        mainDutyCycle = getMainDutyCycle (mainSetPoint, mainSensorValue);
 
-        tailDutyCycle = getTailDutyCycle (tailSetPoint, tailSensorValue, mainDutyCycle);
-        setTailPWM(tailDutyCycle);
-        setMainPWM(mainDutyCycle);
-    }
-
-
-}
 
 
 int
@@ -255,25 +177,7 @@ main(void)
 
         SysCtlDelay (SysCtlClockGet() / 96);  // Update display at ~ 32 Hz
 
-        if (slowTick)
-        {
-            slowTick = false;
-            // Form and send a status message to the console
-
-            /*
-            usprintf (statusStr, "Mean=%4d sample# =%5d | \r\n", meanVal, g_ulSampCnt);
-            UARTSend (statusStr);
-            usprintf (statusStr, "Altitude=%4d | \r\n", percentageAltitude);
-            UARTSend (statusStr);
-            usprintf (statusStr, "buffVal=%4d | \r\n", ulValue);
-            UARTSend (statusStr);
-            */
-
-            //usprintf (statusStr, "buffVal=%4d | \r\n", temp);
-            //UARTSend (statusStr);
-
-
-        }
+        //displayUART (int32_t desiredYaw, int32_t actualYaw, int16_t desiredAltitude, int16_t actualAltitude, uint8_t mainDuty, uint8_t tailDuty, uint8_t operatingMode)
 
 
 
