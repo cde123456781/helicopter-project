@@ -62,9 +62,9 @@ uint8_t mainDutyCycle;
 
 //  ---Tail Rotor PWM: PF1, J3-10
 #define PWM_TAIL_BASE        PWM1_BASE
-#define PWM_TAIL_GEN         PWM_GEN_3
-#define PWM_TAIL_OUTNUM      PWM_OUT_7
-#define PWM_TAIL_OUTBIT      PWM_OUT_7_BIT
+#define PWM_TAIL_GEN         PWM_GEN_2
+#define PWM_TAIL_OUTNUM      PWM_OUT_5
+#define PWM_TAIL_OUTBIT      PWM_OUT_5_BIT
 #define PWM_TAIL_PERIPH_PWM  SYSCTL_PERIPH_PWM1
 #define PWM_TAIL_PERIPH_GPIO SYSCTL_PERIPH_GPIOF
 #define PWM_TAIL_GPIO_BASE   GPIO_PORTF_BASE

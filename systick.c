@@ -17,6 +17,7 @@
 #include "buttons4.h"
 #include "inc/hw_memmap.h"
 #include "systick.h"
+#include "pwm.h"
 
 
 
@@ -34,6 +35,7 @@
 //********************************************************
 uint32_t g_ulSampCnt;
 
+uint8_t controlFlag;
 
 //********************************************************
 // Functions
@@ -49,6 +51,8 @@ SysTickIntHandler(void)
     //
     ADCProcessorTrigger(ADC1_BASE, 3);
     g_ulSampCnt++;
+
+    controlFlag = true;
 
     static uint8_t tickCount = 0;
     const uint8_t ticksPerSlow = SYSTICK_RATE_HZ / SLOWTICK_RATE_HZ;
@@ -69,6 +73,10 @@ initClock (void)
     // Set the clock rate to 20 MHz
     SysCtlClockSet (SYSCTL_SYSDIV_10 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN |
                    SYSCTL_XTAL_16MHZ);
+
+    // Set the PWM clock rate (using the prescaler)
+    SysCtlPWMClockSet(PWM_DIVIDER_CODE);
+
     //
     // Set up the period for the SysTick timer.  The SysTick timer period is
     // set as a function of the system clock.

@@ -21,7 +21,7 @@
 //********************************************************
 
 
-#define YAW_DISPLAY_STRING "Yaw = %3d.%03d  " //3dp for YAW_ANGLE_SCALE = 1000
+#define YAW_DISPLAY_STRING "Yaw=%3d.%03d deg " //3dp for YAW_ANGLE_SCALE = 1000
 
 //********************************************************
 // Functions
@@ -72,9 +72,9 @@ displayAltitude(int16_t percentageAltitude)
 
     char string[17];
 
-    usnprintf (string, sizeof(string), "altitude = %4d", percentageAltitude);
+    usnprintf (string, sizeof(string), "altitude = %d ", percentageAltitude);
 
-    OLEDStringDraw (string, 0, 2);
+    OLEDStringDraw (string, 0, 0);
 
 }
 
@@ -87,6 +87,24 @@ displayYawAngle(int32_t yawAngle, uint16_t yawAngleSubDegree)
 
     usnprintf (string, sizeof(string), YAW_DISPLAY_STRING, yawAngle, yawAngleSubDegree);
 
+    OLEDStringDraw (string, 0, 1);
+}
+
+
+// Function for displaying the PWM duty cycles for tail and main rotor on the display
+void
+displayPWM(uint8_t mainDutyCycle, uint8_t tailDutyCycle)
+{
+    char string[17];
+
+    usnprintf (string, sizeof(string), "PWM = %d ", mainDutyCycle);
+
+    OLEDStringDraw (string, 0, 2);
+
+    usnprintf (string, sizeof(string), "PWM = %d ", tailDutyCycle);
+
     OLEDStringDraw (string, 0, 3);
 }
+
+
 

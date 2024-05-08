@@ -26,32 +26,11 @@
 // Global variables
 //********************************************************
 
-uint8_t tailDutyCycle;
-uint8_t mainDutyCycle;
-
-
-
-//*****************************************************************************
-// Constants
-//*****************************************************************************
-
-#define KP_MAIN
-#define KI_MAIN
-#define KD_MAIN
-
-#define KP_TAIL
-#define KI_TAIL
-#define KD_TAIL
-
-#define DELTA_T
-
-
 #define MAX_OUTPUT 70 // HeliSims are limited to 70 (lect 11.20). May need to change this for
                       // actual?
 #define MIN_OUTPUT 0    
 
-#define GRAVITY 33
-#define COUPLING 0.88
+
 //*****************************************************************************
 // Functions
 //*****************************************************************************

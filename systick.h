@@ -28,7 +28,7 @@
 
 uint32_t g_ulSampCnt;
 volatile uint8_t slowTick;
-
+uint8_t controlFlag;
 
 //********************************************************
 // Prototypes

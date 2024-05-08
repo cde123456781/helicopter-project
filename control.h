@@ -30,30 +30,29 @@
 uint8_t tailDutyCycle;
 uint8_t mainDutyCycle;
 
-float setpoint;
-float sensorValue;
-
 //*****************************************************************************
 // Constants
 //*****************************************************************************
 
-#define KP_MAIN
-#define KI_MAIN
-#define KD_MAIN
+#define KU_MAIN 10
+//#define MAIN_PERIOD 0.1
+#define KP_MAIN 10//(0.6 * KU_MAIN)
+#define KI_MAIN 0//(2 * KU_MAIN)/MAIN_PERIOD
+#define KD_MAIN 0//0.075 * KU_MAIN * MAIN_PERIOD
 
-#define KP_TAIL
-#define KI_TAIL
-#define KD_TAIL
+#define KP_TAIL 0
+#define KI_TAIL 0
+#define KD_TAIL 0
 
-#define DELTA_T
+#define DELTA_T 0.01
 
 
 #define MAX_OUTPUT 70 // HeliSims are limited to 70 (lect 11.20). May need to change this for
                       // actual?
 #define MIN_OUTPUT 0
 
-#define GRAVITY 33
-#define COUPLING 0.88
+#define GRAVITY 41
+#define COUPLING 0.81
 
 //*****************************************************************************
 // Functions

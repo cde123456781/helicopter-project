@@ -24,7 +24,7 @@
 //********************************************************
 
 
-#define YAW_DISPLAY_STRING "Yaw = %3d.%03d  "
+#define YAW_DISPLAY_STRING "Yaw=%3d.%03d deg " //3dp for YAW_ANGLE_SCALE = 1000
 
 
 //********************************************************
@@ -45,5 +45,8 @@ void displayAltitude(int16_t percentageAltitude);
 
 // Function for displaying the yaw angle on the displa
 void displayYawAngle(int32_t yawAngle, uint16_t yawAngleSubDegree);
+
+// Function for displaying the PWM duty cycles for tail and main rotor on the display
+void displayPWM(uint8_t mainDutyCycle, uint8_t tailDutyCycle);
 
 #endif //DISPLAY_H

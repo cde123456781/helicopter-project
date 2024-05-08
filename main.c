@@ -24,6 +24,7 @@
 #include "altitude.h"
 #include "display.h"
 #include "control.h"
+#include "pwm.h"
 
 //*****************************************************************************
 // Constants
@@ -61,11 +62,11 @@ char statusStr[MAX_STR_LEN + 1];
 
 int32_t testcount = 0;
 
-float yawSetpoint = 0;     //used for control functions
-float yawSensorValue = 0;  //
+float tailSetPoint = 0;     //used for control functions
+float tailSensorValue = 0;  //
 
-float altSetpoint = 0;     //used for control functions
-float altSensorValue = 0;  //
+float mainSetPoint = 10;     //used for control functions
+float mainSensorValue = 0;  //
 
 
 void
@@ -134,36 +135,51 @@ pollButtons(void)
 {
     if (checkButton (RIGHT) == PUSHED)
      {
-        yawSetpoint += 15.0;
-        if (yawSetpoint < -180) {
-            yawSetpoint = 180 + (yawSetpoint - -180) ;
+        tailSetPoint += 15.0;
+        if (tailSetPoint < -180) {
+            tailSetPoint = 180 + (tailSetPoint - -180) ;
         }
      }
 
     if(checkButton (LEFT) == PUSHED)
     {
         //debugLED(); // LED not on upon start, but on after left button pressed
-        yawSetpoint -= 15.0;
-        if (yawSetpoint > 180) {
-            yawSetpoint = -180 + (yawSetpoint - 180) ;
+        tailSetPoint -= 15.0;
+        if (tailSetPoint > 180) {
+            tailSetPoint = -180 + (tailSetPoint - 180) ;
         }
     }
 
     if(checkButton (UP) == PUSHED)
     {
-        altSetpoint += 10.0;
-        if (altSetpoint > 100) {
-            altSetpoint = 100;
+        mainSetPoint += 10.0;
+        if (mainSetPoint > 100) {
+            mainSetPoint = 100;
         }
     }
 
     if(checkButton (DOWN) == PUSHED)
     {
-        altSetpoint -= 10.0;
-        if (altSetpoint < 0) {
-            altSetpoint = 0;
+        mainSetPoint -= 10.0;
+        if (mainSetPoint < 0) {
+            mainSetPoint = 0;
         }
     }
+}
+
+void
+checkControlFlag(void)
+{
+    if (controlFlag == true)
+    {
+        mainDutyCycle = getMainDutyCycle (mainSetPoint, mainSensorValue);
+
+        tailDutyCycle = getTailDutyCycle (tailSetPoint, tailSensorValue, mainDutyCycle);
+        setTailPWM(tailDutyCycle);
+        setMainPWM(mainDutyCycle);
+    }
+
+
 }
 
 
@@ -179,6 +195,8 @@ main(void)
     initDisplay ();
     initCircBuf (&g_inBuffer, BUF_SIZE);
     initYawMonitor();
+    initialiseMainPWM ();
+    initialiseTailPWM ();
 
 
     initialiseUSB_UART ();
@@ -192,6 +210,9 @@ main(void)
     meanVal = calcMean();
     setHelicopterLandedValue(meanVal);
 
+    enableTailPWMOutput();
+    enableMainPWMOutput();
+
     //
     // Enable interrupts to the processor.
     IntMasterEnable();
@@ -199,22 +220,23 @@ main(void)
     {
         IntMasterDisable();
         calculateYawAngle();
-        yawSensorValue = yawAngle;
+        tailSensorValue = yawAngle;
 
         meanVal = calcMean();
 
         calcPercentageAltitude(meanVal, volt);
-        altSensorValue = percentageAltitude;
+        mainSensorValue = percentageAltitude;
         IntMasterEnable();
 
         pollButtons();
-//        if (displayMode == 0)
-//         {
-//             displayAltitude(percentageAltitude);
-//             displayYawAngle(yawAngle, yawAngleSubDegree);
-//         } else if (displayMode == 1) {
-//             displayMeanVal (meanVal, g_ulSampCnt);
-//         }
+        if (displayMode == 0)
+         {
+             displayAltitude(percentageAltitude);
+             displayYawAngle(yawAngle, yawAngleSubDegree);
+             displayPWM(mainDutyCycle, tailDutyCycle);
+         } else if (displayMode == 1) {
+             displayMeanVal (meanVal, g_ulSampCnt);
+         }
 //
 //        if(checkButton (LEFT) == PUSHED)
 //        {
@@ -229,7 +251,7 @@ main(void)
 //            displayMode = displayMode % 3;
 //        }
 
-
+        checkControlFlag();
 
         SysCtlDelay (SysCtlClockGet() / 96);  // Update display at ~ 32 Hz
 
@@ -247,8 +269,8 @@ main(void)
             UARTSend (statusStr);
             */
 
-            usprintf (statusStr, "buffVal=%4d | \r\n", temp);
-            UARTSend (statusStr);
+            //usprintf (statusStr, "buffVal=%4d | \r\n", temp);
+            //UARTSend (statusStr);
 
 
         }
