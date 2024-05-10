@@ -12,7 +12,6 @@
 #include <stdbool.h>
 
 
-// I'm tired as fuck, is there a reason why we still have this include when we're including "pwm.h"?
 #include "driverlib/pwm.h"
 
 #include "driverlib/debug.h"
@@ -26,6 +25,7 @@
 #include "control.h"
 #include "pwm.h"
 #include "uart.h"
+//#include "switch.h"
 
 
 
@@ -106,6 +106,11 @@ pollButtons(void)
     }
 }
 
+void takeOff(void)
+{
+
+}
+
 
 int
 main(void)
@@ -141,10 +146,14 @@ main(void)
     //for testing
     mainSetPoint = 51;
     // Enable interrupts to the processor.
+    checkRefStartup();
     IntMasterEnable();
+//    discoverReference();
+//    goToReference();
     while (1)
     {
         IntMasterDisable();
+
         calculateYawAngle();
         tailSensorValue = yawAngle;
 
@@ -153,6 +162,7 @@ main(void)
         calcPercentageAltitude(meanVal, volt);
         mainSensorValue = percentageAltitude;
         IntMasterEnable();
+        discoverReference();
 
         pollButtons();
         if (displayMode == 0)
@@ -181,9 +191,9 @@ main(void)
 
         SysCtlDelay (SysCtlClockGet() / 96);  // Update display at ~ 32 Hz
 
-        displayUART (tailSetPoint, yawAngle,
-                     mainSetPoint, percentageAltitude,
-                     mainDutyCycle, tailDutyCycle, 1);
+//        displayUART (tailSetPoint, yawAngle,
+//                     mainSetPoint, percentageAltitude,
+//                     mainDutyCycle, tailDutyCycle, 1);
 
 
 

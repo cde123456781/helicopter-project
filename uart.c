@@ -91,15 +91,15 @@ displayUART (int32_t desiredYaw, int32_t actualYaw, int16_t desiredAltitude, int
 
             sendUARTFlag = false;
             // Form and send a status message to the console
-            usprintf (statusStr, "DesiredYaw=%4d deg ActualYaw=%5d deg | \r\n", desiredYaw, actualYaw);
-            UARTSend (statusStr);
-//            usprintf (statusStr, "DesiredAltitude=%4d %% ActualAltitude=%5d %%| \r\n", desiredAltitude, actualAltitude);
+//            usprintf (statusStr, "DesiredYaw=%4d deg ActualYaw=%5d deg | \r\n", desiredYaw, actualYaw);
 //            UARTSend (statusStr);
+            usprintf (statusStr, "DesiredAltitude=%4d %% ActualAltitude=%5d %%| \r\n", desiredAltitude, actualAltitude);
+            UARTSend (statusStr);
 //            usprintf (statusStr, "MainDuty=%4d %% TailDuty=%4d %% | \r\n", mainDuty, tailDuty);
 //            UARTSend (statusStr);
 //            usprintf (statusStr, "OperatingMode=%4d | \r\n", operatingMode);
 //            UARTSend (statusStr);
-
+//
 
         }
 

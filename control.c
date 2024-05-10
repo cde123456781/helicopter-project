@@ -22,6 +22,7 @@
 #include "control.h"
 
 
+
 //********************************************************
 // Constants
 //********************************************************
@@ -91,9 +92,9 @@ float getTailDutyCycle (float setPoint, float sensorValue, float mainDutyCycle)
 
     float error = setPoint - sensorValue;
     if (error > 180) {
-        error = error - 360;
+        error = (error - 360);
     } else if (error < -180) {
-        error = error + 360;
+        error = (error + 360);
     }
 
     float proportionalTerm = KP_TAIL * error;
@@ -134,6 +135,8 @@ checkControlFlag(void)
 
 
 }
+
+
 
 
 

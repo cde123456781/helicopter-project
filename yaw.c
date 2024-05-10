@@ -21,6 +21,9 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "yaw.h"
+#include "switch.h"
+#include "uart.h"
+#include "control.h"
 
 
 // Yaw Constants
@@ -37,6 +40,8 @@ int32_t yawAngle;
 uint16_t yawAngleSubDegree;
 int16_t yawCount;
 int32_t yawState;
+int32_t referenceFlag;
+int32_t yawReference;
 //********************************************************
 // Prototypes
 //********************************************************
@@ -111,15 +116,30 @@ void calculateYawAngle(void)
     //GPIOIntEnable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
 }
 
+void YawReferenceIntHandler(void)
+{
+
+    yawReference = yawAngle;
+    referenceFlag = 0;
+    displayUART (0, 0, yawReference, 0, 0, 0, 0);
+    tailSetPoint = yawReference;
+
+    GPIOIntClear(GPIO_PORTC_BASE, GPIO_PIN_4);
+    GPIOIntDisable(GPIO_PORTC_BASE, GPIO_PIN_4);
+}
+
 //initialise yaw interrupts
 void initYawMonitor (void)
 {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
 
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB))
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB) || (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOC)))
     {
 
     }
+
+    //quadrature signals
 
     GPIOIntRegister(GPIO_PORTB_BASE, YawIntHandler);
 
@@ -129,4 +149,49 @@ void initYawMonitor (void)
 
     GPIOIntEnable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
 
+    //reference signal
+
+    GPIOIntRegister(GPIO_PORTC_BASE, YawReferenceIntHandler);
+
+    GPIOPinTypeGPIOInput(GPIO_PORTC_BASE, GPIO_PIN_4);
+
+    GPIOIntTypeSet(GPIO_PORTC_BASE, GPIO_PIN_4 , GPIO_FALLING_EDGE);
+
+    GPIOIntEnable(GPIO_PORTC_BASE, GPIO_PIN_4 );
+
+}
+
+void checkRefStartup(void)
+{
+    referenceFlag = 1;
+    if (GPIOPinRead (GPIO_PORTC_BASE, GPIO_PIN_4) == false)
+    {
+        referenceFlag = 0;
+    }
+}
+
+void
+discoverReference(void)
+{
+    if (performReferenceSearchFlag)
+    {
+        performReferenceSearchFlag = false;
+        if (referenceFlag == 1)
+        {
+            tailSetPoint -= 2;
+
+            if (tailSetPoint <= -180) {
+                tailSetPoint = 180 + (tailSetPoint - -180) ;
+            }
+        }
+
+    }
+
+
+}
+
+void
+goToReference(void)
+{
+    tailSetPoint = yawReference;
 }

@@ -20,6 +20,7 @@
 #include "pwm.h"
 #include "uart.h"
 #include "control.h"
+#include "yaw.h"
 
 
 
@@ -55,15 +56,24 @@ SysTickIntHandler(void)
 
     controlFlag = true;
 
-    static uint8_t tickCount = 0;
+    static uint8_t UARTTickCount = 0;
+    static uint8_t yawTickCount = 0;
     const uint8_t ticksForUART = SYSTICK_RATE_HZ / UART_DISPLAY_RATE;
 
     updateButtons ();       // Poll the buttons
-    if (++tickCount >= ticksForUART)
+    if (++UARTTickCount >= ticksForUART)
     {                       // Signal a slow tick
-        tickCount = 0;
+        UARTTickCount = 0;
         sendUARTFlag = true;
     }
+
+    if (++yawTickCount >= YAW_TICKS)
+        {                       // Signal a slow tick
+            yawTickCount = 0;
+            performReferenceSearchFlag = true;
+        }
+
+
 }
 
 

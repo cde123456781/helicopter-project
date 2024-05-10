@@ -23,6 +23,7 @@
 
 #include "stdio.h"
 #include "stdlib.h"
+#include "control.h"
 
 
 // Yaw Constants
@@ -31,6 +32,7 @@
 
 // Set in powers of 10 depending on how many floating points desired (min 10)
 #define YAW_ANGLE_SCALE 1000
+#define YAW_TICKS 25
 
 //********************************************************
 // Global variables
@@ -39,6 +41,10 @@ int32_t yawAngle;
 uint16_t yawAngleSubDegree;
 int16_t yawCount;
 int32_t yawState;
+int32_t referenceFlag;
+int32_t yawReference;
+
+volatile uint8_t performReferenceSearchFlag;
 //********************************************************
 // Prototypes
 //********************************************************
@@ -51,4 +57,12 @@ void calculateYawAngle(void);
 
 //initialise yaw interrupts
 void initYawMonitor (void);
+
+void
+goToReference(void);
+
+void
+discoverReference(void);
+
+void checkRefStartup(void);
 #endif //YAW_H
