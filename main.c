@@ -28,6 +28,7 @@
 #include "uart.h"
 
 
+
 #define BLUE_LED  GPIO_PIN_2
 
 
@@ -70,17 +71,20 @@ pollButtons(void)
 {
     if (checkButton (RIGHT) == PUSHED)
      {
-        tailSetPoint += 15.0;
-        if (tailSetPoint < -180) {
+        tailSetPoint -= 15.0;
+
+        if (tailSetPoint <= -180) {
             tailSetPoint = 180 + (tailSetPoint - -180) ;
         }
+
      }
 
     if(checkButton (LEFT) == PUSHED)
     {
         //debugLED(); // LED not on upon start, but on after left button pressed
-        tailSetPoint -= 15.0;
+        tailSetPoint += 15.0;
         if (tailSetPoint > 180) {
+
             tailSetPoint = -180 + (tailSetPoint - 180) ;
         }
     }
@@ -101,8 +105,6 @@ pollButtons(void)
         }
     }
 }
-
-
 
 
 int
@@ -135,7 +137,9 @@ main(void)
     enableTailPWMOutput();
     enableMainPWMOutput();
 
-    //
+
+    //for testing
+    mainSetPoint = 51;
     // Enable interrupts to the processor.
     IntMasterEnable();
     while (1)
@@ -157,7 +161,7 @@ main(void)
              displayYawAngle(yawAngle, yawAngleSubDegree);
              displayPWM(mainDutyCycle, tailDutyCycle);
          } else if (displayMode == 1) {
-             displayMeanVal (meanVal, g_ulSampCnt);
+             displayMeanVal (meanVal, numSamples);
          }
 //
 //        if(checkButton (LEFT) == PUSHED)
@@ -177,7 +181,9 @@ main(void)
 
         SysCtlDelay (SysCtlClockGet() / 96);  // Update display at ~ 32 Hz
 
-        //displayUART (int32_t desiredYaw, int32_t actualYaw, int16_t desiredAltitude, int16_t actualAltitude, uint8_t mainDuty, uint8_t tailDuty, uint8_t operatingMode)
+        displayUART (tailSetPoint, yawAngle,
+                     mainSetPoint, percentageAltitude,
+                     mainDutyCycle, tailDutyCycle, 1);
 
 
 

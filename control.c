@@ -38,11 +38,11 @@
 uint8_t tailDutyCycle;
 uint8_t mainDutyCycle;
 
-float tailSetPoint = 0;     //used for control functions
-float tailSensorValue = 0;  //
+float tailSetPoint;     //used for control functions
+float tailSensorValue;  //
 
-float mainSetPoint = 10;     //used for control functions
-float mainSensorValue = 0;  //
+float mainSetPoint;     //used for control functions
+float mainSensorValue;  //
 
 
 //*****************************************************************************
@@ -90,6 +90,12 @@ float getTailDutyCycle (float setPoint, float sensorValue, float mainDutyCycle)
     static float previousSensorValue = 0;
 
     float error = setPoint - sensorValue;
+    if (error > 180) {
+        error = error - 360;
+    } else if (error < -180) {
+        error = error + 360;
+    }
+
     float proportionalTerm = KP_TAIL * error;
     float integralTerm = KI_TAIL * error * DELTA_T;
     float derivativeTerm = KD_TAIL * (previousSensorValue - sensorValue) / DELTA_T;

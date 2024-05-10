@@ -43,12 +43,12 @@ float mainSensorValue;  //
 
 #define KU_MAIN 10
 //#define MAIN_PERIOD 0.1
-#define KP_MAIN 10//(0.6 * KU_MAIN)
-#define KI_MAIN 0//(2 * KU_MAIN)/MAIN_PERIOD
+#define KP_MAIN 4//(0.6 * KU_MAIN)
+#define KI_MAIN 0.5//(2 * KU_MAIN)/MAIN_PERIOD
 #define KD_MAIN 0//0.075 * KU_MAIN * MAIN_PERIOD
 
-#define KP_TAIL 0
-#define KI_TAIL 0
+#define KP_TAIL 8
+#define KI_TAIL 0.5
 #define KD_TAIL 0
 
 #define DELTA_T 0.01
@@ -59,7 +59,8 @@ float mainSensorValue;  //
 #define MIN_OUTPUT 0
 
 #define GRAVITY 41
-#define COUPLING 0.81
+#define COUPLING 0.80
+
 
 //*****************************************************************************
 // Functions
@@ -70,6 +71,10 @@ getMainDutyCycle (float setPoint, float sensorValue);
 
 float
 getTailDutyCycle (float setPoint, float sensorValue, float mainDutyCycle);
+
+void
+checkControlFlag(void);
+
 
 #endif //CONTROL_H
 
