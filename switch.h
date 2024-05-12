@@ -21,8 +21,7 @@
 #include "driverlib/debug.h"
 #include "inc/tm4c123gh6pm.h"
 
-//enum switchNames {DOWN = 0, UP};
-
+static bool switchState;
 
 #define SLIDING_SWITCH_PERIPH       SYSCTL_PERIPH_GPIOA
 #define SLIDING_SWITCH_PORT_BASE    GPIO_PORTA_BASE
