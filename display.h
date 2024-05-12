@@ -12,6 +12,7 @@
 #define DISPLAY_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "inc/hw_memmap.h"
 
@@ -25,6 +26,13 @@
 
 
 #define YAW_DISPLAY_STRING "Yaw=%3d.%03d deg " //3dp for YAW_ANGLE_SCALE = 1000
+#define DISPLAY_RATE 32 //Measured in Hz
+
+//********************************************************
+// Global variables
+//********************************************************
+
+volatile uint8_t updateDisplayFlag;
 
 
 //********************************************************
@@ -37,8 +45,8 @@ void initDisplay (void);
 // Function for clearing the display
 void clearDisplay (void);
 
-// Function for displaying the mean value on the display
-void displayMeanVal(uint16_t meanVal, uint32_t count);
+// Function for displaying the altitude, yaw, and PWM according to the display rate
+void updateDisplay(int16_t percentageAltitude, int32_t yawAngle, uint16_t yawAngleSubDegree, uint8_t mainDutyCycle, uint8_t tailDutyCycle)
 
 // Function for displaying the altitude on the display
 void displayAltitude(int16_t percentageAltitude);

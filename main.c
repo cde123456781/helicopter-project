@@ -173,14 +173,17 @@ main(void)
         discoverReference();
 
         pollButtons();
-        if (displayMode == 0)
-         {
-             displayAltitude(percentageAltitude);
-             displayYawAngle(yawAngle, yawAngleSubDegree);
-             displayPWM(mainDutyCycle, tailDutyCycle);
-         } else if (displayMode == 1) {
-             displayMeanVal (meanVal, numSamples);
-         }
+
+
+        updateDisplay(percentageAltitude, yawAngle, yawAngleSubDegree, mainDutyCycle, tailDutyCycle);
+//        if (displayMode == 0)
+//         {
+//             displayAltitude(percentageAltitude);
+//             displayYawAngle(yawAngle, yawAngleSubDegree);
+//             displayPWM(mainDutyCycle, tailDutyCycle);
+//         } else if (displayMode == 1) {
+//             displayMeanVal (meanVal, numSamples);
+//         }
 //
 //        if(checkButton (LEFT) == PUSHED)
 //        {
@@ -197,7 +200,7 @@ main(void)
 
         checkControlFlag();
 
-        SysCtlDelay (SysCtlClockGet() / 96);  // Update display at ~ 32 Hz
+        //SysCtlDelay (SysCtlClockGet() / 96);  // Update display at ~ 32 Hz
 
 //        displayUART (tailSetPoint, yawAngle,
 //                     mainSetPoint, percentageAltitude,

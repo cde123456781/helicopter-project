@@ -22,6 +22,7 @@
 #include "control.h"
 #include "yaw.h"
 #include "switch.h"
+#include "display.h"
 
 
 
@@ -59,9 +60,19 @@ SysTickIntHandler(void)
 
     static uint8_t UARTTickCount = 0;
     static uint8_t yawTickCount = 0;
+    static uint8_t displayTickCount = 0;
     const uint8_t ticksForUART = SYSTICK_RATE_HZ / UART_DISPLAY_RATE;
+    const uint8_t ticksForDisplay = SYSTICK_RATE_HZ / DISPLAY_RATE;
 
     updateButtons ();       // Poll the buttons
+
+    if (++displayTickCount >= ticksForDisplay)
+    {
+        displayTickCount = 0;
+        updateDisplayFlag = true;
+    }
+
+
     if (++UARTTickCount >= ticksForUART)
     {                       // Signal a slow tick
         UARTTickCount = 0;
