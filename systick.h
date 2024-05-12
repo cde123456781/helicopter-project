@@ -23,6 +23,7 @@
 #include "uart.h"
 #include "control.h"
 #include "yaw.h"
+#include "switch.h"
 
 
 //********************************************************
