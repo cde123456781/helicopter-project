@@ -79,7 +79,7 @@ pollButtons(void)
 
      }
 
-    if(checkButton (LEFT) == PUSHED)
+    else if(checkButton (LEFT) == PUSHED)
     {
         //debugLED(); // LED not on upon start, but on after left button pressed
         tailSetPoint += 15.0;
@@ -89,7 +89,7 @@ pollButtons(void)
         }
     }
 
-    if(checkButton (UP) == PUSHED)
+    else if(checkButton (UP) == PUSHED)
     {
         mainSetPoint += 10.0;
         if (mainSetPoint > 100) {
@@ -97,19 +97,27 @@ pollButtons(void)
         }
     }
 
-    if(checkButton (DOWN) == PUSHED)
+    else if(checkButton (DOWN) == PUSHED)
     {
         mainSetPoint -= 10.0;
         if (mainSetPoint < 0) {
             mainSetPoint = 0;
         }
     }
+
+    else if (checkButton (RESET) == PUSHED)
+    {
+        SysCtlReset();
+    }
+
 }
 
 void takeOff(void)
 {
 
 }
+
+
 
 
 int
