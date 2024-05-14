@@ -9,6 +9,7 @@
 
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "inc/hw_memmap.h"
 
@@ -21,7 +22,8 @@
 //********************************************************
 
 
-#define YAW_DISPLAY_STRING "Yaw = %3d.%03d  " //3dp for YAW_ANGLE_SCALE = 1000
+#define YAW_DISPLAY_STRING "Yaw=%3d.%03d deg " //3dp for YAW_ANGLE_SCALE = 1000
+#define DISPLAY_RATE 32 //Measured in Hz
 
 //********************************************************
 // Functions
@@ -49,19 +51,15 @@ clearDisplay(void) {
 
 // Function for displaying the mean value on the display
 void
-displayMeanVal(uint16_t meanVal, uint32_t count)
+updateDisplay(int16_t percentageAltitude, int32_t yawAngle, uint16_t yawAngleSubDegree, uint8_t mainDutyCycle, uint8_t tailDutyCycle)
 {
 
-    char string[17];  // 16 characters across the display
-
-    OLEDStringDraw ("ADC demo 1", 0, 0);
-
-    usnprintf (string, sizeof(string), "Mean = %4d", meanVal);
-
-    OLEDStringDraw (string, 0, 1);
-
-    usnprintf (string, sizeof(string), "Sample# %5d", count);
-    OLEDStringDraw (string, 0, 3);
+    if (updateDisplayFlag) {
+        displayAltitude(percentageAltitude);
+        displayYawAngle(yawAngle, yawAngleSubDegree);
+        displayPWM(mainDutyCycle, tailDutyCycle);
+        updateDisplayFlag = false;
+    }
 }
 
 
@@ -72,9 +70,9 @@ displayAltitude(int16_t percentageAltitude)
 
     char string[17];
 
-    usnprintf (string, sizeof(string), "altitude = %4d", percentageAltitude);
+    usnprintf (string, sizeof(string), "altitude = %d %%  ", percentageAltitude);
 
-    OLEDStringDraw (string, 0, 2);
+    OLEDStringDraw (string, 0, 0);
 
 }
 
@@ -87,6 +85,24 @@ displayYawAngle(int32_t yawAngle, uint16_t yawAngleSubDegree)
 
     usnprintf (string, sizeof(string), YAW_DISPLAY_STRING, yawAngle, yawAngleSubDegree);
 
+    OLEDStringDraw (string, 0, 1);
+}
+
+
+// Function for displaying the PWM duty cycles for tail and main rotor on the display
+void
+displayPWM(uint8_t mainDutyCycle, uint8_t tailDutyCycle)
+{
+    char string[17];
+
+    usnprintf (string, sizeof(string), "MainPWM = %d %%", mainDutyCycle);
+
+    OLEDStringDraw (string, 0, 2);
+
+    usnprintf (string, sizeof(string), "TailPWM = %d %%", tailDutyCycle);
+
     OLEDStringDraw (string, 0, 3);
 }
+
+
 

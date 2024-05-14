@@ -17,6 +17,13 @@
 #include "buttons4.h"
 #include "inc/hw_memmap.h"
 #include "systick.h"
+#include "pwm.h"
+#include "uart.h"
+#include "control.h"
+#include "yaw.h"
+#include "switch.h"
+#include "display.h"
+#include "protocols.h"
 
 
 
@@ -27,12 +34,12 @@
 
 #define SYSTICK_RATE_HZ 100
 #define SAMPLE_RATE_HZ 120
-#define SLOWTICK_RATE_HZ 4
+
 
 //********************************************************
 // Global variables
 //********************************************************
-uint32_t g_ulSampCnt;
+uint32_t numSamples;
 
 
 //********************************************************
@@ -48,17 +55,49 @@ SysTickIntHandler(void)
     // Initiate a conversion
     //
     ADCProcessorTrigger(ADC1_BASE, 3);
-    g_ulSampCnt++;
+    numSamples++;
 
-    static uint8_t tickCount = 0;
-    const uint8_t ticksPerSlow = SYSTICK_RATE_HZ / SLOWTICK_RATE_HZ;
+    controlFlag = true;
+
+    static uint8_t UARTTickCount = 0;
+    static uint8_t yawTickCount = 0;
+    static uint8_t displayTickCount = 0;
+    static uint8_t fallTickCount = 0;
+    const uint8_t ticksForUART = SYSTICK_RATE_HZ / UART_DISPLAY_RATE;
+    const uint8_t ticksForDisplay = SYSTICK_RATE_HZ / DISPLAY_RATE;
+
 
     updateButtons ();       // Poll the buttons
-    if (++tickCount >= ticksPerSlow)
-    {                       // Signal a slow tick
-        tickCount = 0;
-        slowTick = true;
+
+
+    updateSwitch();
+
+    if (++displayTickCount >= ticksForDisplay)
+    {
+        displayTickCount = 0;
+        updateDisplayFlag = true;
     }
+
+
+    if (++UARTTickCount >= ticksForUART)
+    {                       // Signal a slow tick
+        UARTTickCount = 0;
+        sendUARTFlag = true;
+    }
+
+    if (++yawTickCount >= YAW_TICKS)
+        {                       // Signal a slow tick
+            yawTickCount = 0;
+            performReferenceSearchFlag = true;
+
+        }
+
+    if (++fallTickCount >= FALL_TICKS )
+    {
+        fallTickCount = 0;
+        landingTimeFlag = true;
+    }
+
 }
 
 
@@ -69,6 +108,10 @@ initClock (void)
     // Set the clock rate to 20 MHz
     SysCtlClockSet (SYSCTL_SYSDIV_10 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN |
                    SYSCTL_XTAL_16MHZ);
+
+    // Set the PWM clock rate (using the prescaler)
+    SysCtlPWMClockSet(PWM_DIVIDER_CODE);
+
     //
     // Set up the period for the SysTick timer.  The SysTick timer period is
     // set as a function of the system clock.
