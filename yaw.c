@@ -131,6 +131,21 @@ void YawReferenceIntHandler(void)
     GPIOIntDisable(GPIO_PORTC_BASE, GPIO_PIN_4);
 }
 
+// This interrupt is triggered when discoverReference is called when the helicopter is
+// directly facing the reference point. Stops discoverReference, and sets yawReference and resets yawCount
+void YawReferenceIntHandler(void)
+{
+    isRefFound = 1;
+    yawCount = 0;
+    yawReference = 0;
+
+    tailSetPoint = 0;
+
+
+    GPIOIntClear(GPIO_PORTC_BASE, GPIO_PIN_4);
+    GPIOIntDisable(GPIO_PORTC_BASE, GPIO_PIN_4);
+}
+
 //initialise yaw interrupts
 void initYawMonitor (void)
 {
