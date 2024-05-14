@@ -38,10 +38,10 @@
 // Global variables
 //*****************************************************************************
 
-// Keeping this here instead of having it in circBufT.c cause that's made by some other fucker
+
 circBuf_t g_inBuffer;        // Buffer of size BUF_SIZE integers (sample values)
 
-
+//used for debugging purposes only
 void
 initDebugLED(void)
 {
@@ -99,13 +99,8 @@ main(void)
 
 
 
-    //for testing
-    //mainSetPoint = 51;
-    // Enable interrupts to the processor.
-    //checkRefStartup();
+
     IntMasterEnable();
-    //discoverReference();
-    //goToReference();
     while (1)
     {
         IntMasterDisable();
@@ -128,7 +123,7 @@ main(void)
         updateDisplay(percentageAltitude, yawAngle, yawAngleSubDegree, mainDutyCycle, tailDutyCycle);
 
 
-        // Do we need to disable interrupts here?
+
         if ((!isLanding) && (!isTakingOff) && (!isHovering)) {
             tailDutyCycle = 0;
             mainDutyCycle = 0;
@@ -136,10 +131,6 @@ main(void)
             checkControlFlag();
         }
 
-        //SysCtlDelay(SysCtlClockGet()/96);
-
-
-        // WE NEED A VARIABLE FOR MODE
         displayUART (tailSetPoint, yawAngle,
                      mainSetPoint, percentageAltitude,
                      mainDutyCycle, tailDutyCycle, isLanding, isHovering, isTakingOff);

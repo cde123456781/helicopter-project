@@ -86,7 +86,8 @@ checkButton (uint8_t butName);
 
 // *******************************************************
 // pollButtons: Function checks each button to see if they have been pressed and adjusts 
-// the tailSetPoint or mainSetPoint accordingly
+// the tailSetPoint or mainSetPoint accordingly only if the helicopter is currently in flight
+// mode. The virtual reset button can be used without restrictions
 void pollButtons(void);
 
 #endif /*BUTTONS_H_*/
