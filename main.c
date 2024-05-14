@@ -11,56 +11,37 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+
 #include "driverlib/pwm.h"
 
 #include "driverlib/debug.h"
 
-#include "driverlib/uart.h"
-#include "driverlib/pin_map.h"
 
 #include "yaw.h"
 #include "adc.h"
 #include "systick.h"
 #include "altitude.h"
 #include "display.h"
+#include "control.h"
+#include "pwm.h"
+#include "uart.h"
+#include "protocols.h"
+#include "switch.h"
+#include "buttons4.h"
 
-//*****************************************************************************
-// Constants
-//*****************************************************************************
 
-
-#define MAX_STR_LEN 100
-
-//---USB Serial comms: UART0, Rx:PA0 , Tx:PA1
-#define BAUD_RATE 9600
-#define UART_USB_BASE           UART0_BASE
-#define UART_USB_PERIPH_UART    SYSCTL_PERIPH_UART0
-#define UART_USB_PERIPH_GPIO    SYSCTL_PERIPH_GPIOA
-#define UART_USB_GPIO_BASE      GPIO_PORTA_BASE
-#define UART_USB_GPIO_PIN_RX    GPIO_PIN_0
-#define UART_USB_GPIO_PIN_TX    GPIO_PIN_1
-#define UART_USB_GPIO_PINS      UART_USB_GPIO_PIN_RX | UART_USB_GPIO_PIN_TX
 
 #define BLUE_LED  GPIO_PIN_2
 
 
-//********************************************************
-// Prototypes
-//********************************************************
-
-void initialiseUSB_UART (void);
-void UARTSend (char *pucBuffer);
-
 //*****************************************************************************
 // Global variables
 //*****************************************************************************
+
+
 circBuf_t g_inBuffer;        // Buffer of size BUF_SIZE integers (sample values)
 
-char statusStr[MAX_STR_LEN + 1];
-
-int32_t testcount = 0;
-
-
+//used for debugging purposes only
 void
 initDebugLED(void)
 {
@@ -84,43 +65,7 @@ debugLED(void)
     GPIOPinWrite(GPIO_PORTF_BASE,  BLUE_LED, BLUE_LED);
 }
 
-void
-initialiseUSB_UART (void)
-{
-    //
-    // Enable GPIO port A which is used for UART0 pins.
-    //
-    SysCtlPeripheralEnable(UART_USB_PERIPH_UART);
-    SysCtlPeripheralEnable(UART_USB_PERIPH_GPIO);
-    //
-    // Select the alternate (UART) function for these pins.
-    //
-    GPIOPinTypeUART(UART_USB_GPIO_BASE, UART_USB_GPIO_PINS);
-    GPIOPinConfigure (GPIO_PA0_U0RX);
-    GPIOPinConfigure (GPIO_PA1_U0TX);
 
-    UARTConfigSetExpClk(UART_USB_BASE, SysCtlClockGet(), BAUD_RATE,
-            UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
-            UART_CONFIG_PAR_NONE);
-    UARTFIFOEnable(UART_USB_BASE);
-    UARTEnable(UART_USB_BASE);
-}
-
-
-//**********************************************************************
-// Transmit a string via UART0
-//**********************************************************************
-void
-UARTSend (char *pucBuffer)
-{
-    // Loop while there are more characters to send.
-    while(*pucBuffer)
-    {
-        // Write the next character to the UART Tx FIFO.
-        UARTCharPut(UART_USB_BASE, *pucBuffer);
-        pucBuffer++;
-    }
-}
 
 
 
@@ -128,80 +73,69 @@ int
 main(void)
 {
 
-    uint8_t displayMode = 0;
     initDebugLED();
+
+    // Initialisation functions
     initButtons ();
+    initSwitch();
     initClock ();
     initADC ();
     initDisplay ();
     initCircBuf (&g_inBuffer, BUF_SIZE);
     initYawMonitor();
-
-
+    initialiseMainPWM ();
+    initialiseTailPWM ();
+    initProc();
     initialiseUSB_UART ();
 
     uint16_t meanVal;
 
     uint16_t volt = getVolt(); //approx 1241
 
-
-    SysCtlDelay (SysCtlClockGet() / 6);
+    SysCtlDelay (SysCtlClockGet() / 6); // A short delay to allow initialisation to complete
 
     meanVal = calcMean();
     setHelicopterLandedValue(meanVal);
 
-    //
-    // Enable interrupts to the processor.
+
+
+
     IntMasterEnable();
     while (1)
     {
         IntMasterDisable();
+
         calculateYawAngle();
+        tailSensorValue = yawAngle;
+
         meanVal = calcMean();
 
         calcPercentageAltitude(meanVal, volt);
+        mainSensorValue = percentageAltitude;
+
         IntMasterEnable();
 
+        // Determines if there has been a change in buttons or switches
+        pollButtons();
+        pollSwitch();
 
-        if (displayMode == 0)
-         {
-             displayAltitude(percentageAltitude);
-             displayYawAngle(yawAngle, yawAngleSubDegree);
-         } else if (displayMode == 1) {
-             displayMeanVal (meanVal, g_ulSampCnt);
-         }
+        determineProc();
+        updateDisplay(percentageAltitude, yawAngle, yawAngleSubDegree, mainDutyCycle, tailDutyCycle);
 
-        if(checkButton (LEFT) == PUSHED)
-        {
-            //debugLED(); // LED not on upon start, but on after left button pressed
-            setHelicopterLandedValue(meanVal);
+
+
+        if ((!isLanding) && (!isTakingOff) && (!isHovering)) {
+            tailDutyCycle = 0;
+            mainDutyCycle = 0;
+        } else {
+            checkControlFlag();
         }
 
-        if(checkButton (UP) == PUSHED)
-        {
-            clearDisplay();
-            displayMode++;
-            displayMode = displayMode % 3;
-        }
+        displayUART (tailSetPoint, yawAngle,
+                     mainSetPoint, percentageAltitude,
+                     mainDutyCycle, tailDutyCycle, isLanding, isHovering, isTakingOff);
 
 
-
-        SysCtlDelay (SysCtlClockGet() / 96);  // Update display at ~ 32 Hz
-
-        if (slowTick)
-        {
-            slowTick = false;
-            // Form and send a status message to the console
-
-            usprintf (statusStr, "Mean=%4d sample# =%5d | \r\n", meanVal, g_ulSampCnt);
-            UARTSend (statusStr);
-            usprintf (statusStr, "Altitude=%4d | \r\n", percentageAltitude);
-            UARTSend (statusStr);
-            usprintf (statusStr, "buffVal=%4d | \r\n", ulValue);
-            UARTSend (statusStr);
-
-
-        }
 
     }
 }

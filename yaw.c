@@ -21,6 +21,9 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "yaw.h"
+#include "switch.h"
+#include "uart.h"
+#include "control.h"
 
 
 // Yaw Constants
@@ -37,6 +40,8 @@ int32_t yawAngle;
 uint16_t yawAngleSubDegree;
 int16_t yawCount;
 int32_t yawState;
+int8_t isRefFound;
+int32_t yawReference;
 //********************************************************
 // Prototypes
 //********************************************************
@@ -111,15 +116,33 @@ void calculateYawAngle(void)
     //GPIOIntEnable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
 }
 
+// This interrupt is triggered when discoverReference is called when the helicopter is
+// directly facing the reference point. Stops discoverReference, and sets yawReference and resets yawCount
+void YawReferenceIntHandler(void)
+{
+    isRefFound = 1;
+    yawCount = 0;
+    yawReference = 0;
+
+    tailSetPoint = 0;
+
+
+    GPIOIntClear(GPIO_PORTC_BASE, GPIO_PIN_4);
+    GPIOIntDisable(GPIO_PORTC_BASE, GPIO_PIN_4);
+}
+
 //initialise yaw interrupts
 void initYawMonitor (void)
 {
     SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOC);
 
-    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB))
+    while(!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOB) || (!SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOC)))
     {
 
     }
+
+    //quadrature signals
 
     GPIOIntRegister(GPIO_PORTB_BASE, YawIntHandler);
 
@@ -128,5 +151,67 @@ void initYawMonitor (void)
     GPIOIntTypeSet(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1, GPIO_BOTH_EDGES);
 
     GPIOIntEnable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
+
+    //reference signal
+
+    GPIOIntRegister(GPIO_PORTC_BASE, YawReferenceIntHandler);
+
+    GPIOPinTypeGPIOInput(GPIO_PORTC_BASE, GPIO_PIN_4);
+
+    GPIOIntTypeSet(GPIO_PORTC_BASE, GPIO_PIN_4 , GPIO_FALLING_EDGE);
+
+    GPIOIntEnable(GPIO_PORTC_BASE, GPIO_PIN_4 );
+    isRefFound = 0;
+}
+
+
+
+
+// This function makes the helicopter continuously rotate until it has found the
+// reference position via an interrupt
+void
+discoverReference(void)
+{
+    if (performReferenceSearchFlag)
+    {
+        performReferenceSearchFlag = false;
+        if (isRefFound == 0)
+        {
+            tailSetPoint -= 2;
+
+            if (tailSetPoint <= -180) {
+                tailSetPoint = 180 + (tailSetPoint - -180) ;
+            }
+        }
+
+    }
+
+
+}
+
+
+// This function sets the tailSetPoint to the yawReference which will cause
+// the helicopter to move to the point via control functions
+void
+goToReference(void)
+{
+
+    if (performReferenceSearchFlag)
+    {
+        performReferenceSearchFlag = false;
+        if (tailSetPoint != yawReference)
+        {
+            tailSetPoint = yawReference;
+//            if (tailSensorValue < 0)
+//            {
+//                tailSetPoint += 1;
+//            } else {
+//                tailSetPoint -= 1;
+//            }
+
+        }
+
+    }
+
 
 }

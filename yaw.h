@@ -23,6 +23,7 @@
 
 #include "stdio.h"
 #include "stdlib.h"
+#include "control.h"
 
 
 // Yaw Constants
@@ -31,6 +32,7 @@
 
 // Set in powers of 10 depending on how many floating points desired (min 10)
 #define YAW_ANGLE_SCALE 1000
+#define YAW_TICKS 40
 
 //********************************************************
 // Global variables
@@ -39,6 +41,10 @@ int32_t yawAngle;
 uint16_t yawAngleSubDegree;
 int16_t yawCount;
 int32_t yawState;
+int8_t isRefFound;
+int32_t yawReference;
+
+volatile uint8_t performReferenceSearchFlag;
 //********************************************************
 // Prototypes
 //********************************************************
@@ -51,4 +57,23 @@ void calculateYawAngle(void);
 
 //initialise yaw interrupts
 void initYawMonitor (void);
+
+// This interrupt is triggered when discoverReference is called when the helicopter is
+// directly facing the reference point. Stops discoverReference, and sets yawReference and resets yawCount
+void YawReferenceIntHandler(void);
+
+
+// This function sets the tailSetPoint to the yawReference which will cause
+// the helicopter to move to the point via control functions
+void
+goToReference(void);
+
+
+// This function makes the helicopter continuously rotate until it has found the
+// reference position via an interrupt
+void
+discoverReference(void);
+
+// deprecated func
+//void checkRefStartup(void);
 #endif //YAW_H
