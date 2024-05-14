@@ -40,7 +40,7 @@ int32_t yawAngle;
 uint16_t yawAngleSubDegree;
 int16_t yawCount;
 int32_t yawState;
-int32_t referenceFlag;
+int8_t isRefFound;
 int32_t yawReference;
 //********************************************************
 // Prototypes
@@ -116,13 +116,16 @@ void calculateYawAngle(void)
     //GPIOIntEnable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
 }
 
+// This interrupt is triggered when discoverReference is called when the helicopter is
+// directly facing the reference point. Stops discoverReference, and sets yawReference and resets yawCount
 void YawReferenceIntHandler(void)
 {
+    isRefFound = 1;
+    yawCount = 0;
+    yawReference = 0;
 
-    yawReference = yawAngle;
-    referenceFlag = 0;
-    displayUART (0, 0, yawReference, 0, 0, 0, 0);
-    tailSetPoint = yawReference;
+    tailSetPoint = 0;
+
 
     GPIOIntClear(GPIO_PORTC_BASE, GPIO_PIN_4);
     GPIOIntDisable(GPIO_PORTC_BASE, GPIO_PIN_4);
@@ -158,25 +161,21 @@ void initYawMonitor (void)
     GPIOIntTypeSet(GPIO_PORTC_BASE, GPIO_PIN_4 , GPIO_FALLING_EDGE);
 
     GPIOIntEnable(GPIO_PORTC_BASE, GPIO_PIN_4 );
-
+    isRefFound = 0;
 }
 
-void checkRefStartup(void)
-{
-    referenceFlag = 1;
-    if (GPIOPinRead (GPIO_PORTC_BASE, GPIO_PIN_4) == false)
-    {
-        referenceFlag = 0;
-    }
-}
 
+
+
+// This function makes the helicopter continuously rotate until it has found the
+// reference position via an interrupt
 void
 discoverReference(void)
 {
     if (performReferenceSearchFlag)
     {
         performReferenceSearchFlag = false;
-        if (referenceFlag == 1)
+        if (isRefFound == 0)
         {
             tailSetPoint -= 2;
 
@@ -190,8 +189,29 @@ discoverReference(void)
 
 }
 
+
+// This function sets the tailSetPoint to the yawReference which will cause
+// the helicopter to move to the point via control functions
 void
 goToReference(void)
 {
-    tailSetPoint = yawReference;
+
+    if (performReferenceSearchFlag)
+    {
+        performReferenceSearchFlag = false;
+        if (tailSetPoint != yawReference)
+        {
+            tailSetPoint = yawReference;
+//            if (tailSensorValue < 0)
+//            {
+//                tailSetPoint += 1;
+//            } else {
+//                tailSetPoint -= 1;
+//            }
+
+        }
+
+    }
+
+
 }

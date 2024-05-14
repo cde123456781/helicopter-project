@@ -15,7 +15,7 @@
 
 
 // Based on the code provided by P.J Bones with the addition of the
-// virtual reset button
+// virtual reset button and button polling function
 // 
 // *******************************************************
 
@@ -28,6 +28,8 @@
 #include "driverlib/debug.h"
 #include "inc/tm4c123gh6pm.h"  // Board specific defines (for PF0)
 #include "buttons4.h"
+#include "control.h"
+#include "protocols.h"
 
 
 // *******************************************************
@@ -81,7 +83,7 @@ initButtons (void)
     // RESET button (active LOW)
     SysCtlPeripheralEnable (RESET_BUT_PERIPH);
     GPIOPinTypeGPIOInput (RESET_BUT_PORT_BASE, RESET_BUT_PIN);
-    GPIOPadConfigSet (SYSCTL_PERIPH_GPIOA, GPIO_PIN_6, GPIO_STRENGTH_2MA,
+    GPIOPadConfigSet (RESET_BUT_PORT_BASE, RESET_BUT_PIN, GPIO_STRENGTH_2MA,
        GPIO_PIN_TYPE_STD_WPU);
     but_normal[RESET] = RESET_BUT_NORMAL;
 
@@ -149,4 +151,60 @@ checkButton (uint8_t butName)
 	}
 	return NO_CHANGE;
 }
+
+
+
+// *******************************************************
+// pollButtons: Function checks each button to see if they have been pressed and adjusts 
+// the tailSetPoint or mainSetPoint accordingly
+void
+pollButtons(void)
+{
+    if (isHovering) {
+        if (checkButton (RIGHT) == PUSHED)
+         {
+            tailSetPoint -= 15.0;
+
+            if (tailSetPoint <= -180) {
+                tailSetPoint = 180 + (tailSetPoint - -180) ;
+            }
+
+         }
+
+        else if(checkButton (LEFT) == PUSHED)
+        {
+            //debugLED(); // LED not on upon start, but on after left button pressed
+            tailSetPoint += 15.0;
+            if (tailSetPoint > 180) {
+
+                tailSetPoint = -180 + (tailSetPoint - 180) ;
+            }
+        }
+
+        else if(checkButton (UP) == PUSHED)
+        {
+            mainSetPoint += 10.0;
+            if (mainSetPoint > 100) {
+                mainSetPoint = 100;
+            }
+        }
+
+        else if(checkButton (DOWN) == PUSHED)
+        {
+            mainSetPoint -= 10.0;
+            if (mainSetPoint < 0) {
+                mainSetPoint = 0;
+            }
+
+        }
+
+    }
+
+    if (checkButton (RESET) == PUSHED)
+    {
+        SysCtlReset();
+    }
+
+}
+
 

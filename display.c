@@ -70,7 +70,7 @@ displayAltitude(int16_t percentageAltitude)
 
     char string[17];
 
-    usnprintf (string, sizeof(string), "altitude = %d ", percentageAltitude);
+    usnprintf (string, sizeof(string), "altitude = %d %%  ", percentageAltitude);
 
     OLEDStringDraw (string, 0, 0);
 
@@ -95,11 +95,11 @@ displayPWM(uint8_t mainDutyCycle, uint8_t tailDutyCycle)
 {
     char string[17];
 
-    usnprintf (string, sizeof(string), "PWM = %d ", mainDutyCycle);
+    usnprintf (string, sizeof(string), "MainPWM = %d %%", mainDutyCycle);
 
     OLEDStringDraw (string, 0, 2);
 
-    usnprintf (string, sizeof(string), "PWM = %d ", tailDutyCycle);
+    usnprintf (string, sizeof(string), "TailPWM = %d %%", tailDutyCycle);
 
     OLEDStringDraw (string, 0, 3);
 }

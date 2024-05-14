@@ -50,11 +50,22 @@ volatile uint8_t sendUARTFlag;
 // Functions
 //********************************************************
 
+
+// This function initialises UART
 void initialiseUSB_UART (void);
 
+
+// This function displays the specified character buffer on the terminal
 void UARTSend (char *pucBuffer);
 
+// This function displays the desired yaw, the actual yaw, the desired altitude, the actual altitude, both duty cycles, and 
+// the current mode of the helicopter on the terminal
 void
-displayUART (int32_t desiredYaw, int32_t actualYaw, int16_t desiredAltitude, int16_t actualAltitude, uint8_t mainDuty, uint8_t tailDuty, uint8_t operatingMode);
+displayUART (int32_t desiredYaw, int32_t actualYaw,
+             int16_t desiredAltitude, int16_t actualAltitude,
+             uint8_t mainDuty, uint8_t tailDuty, uint8_t isLanding,
+             uint8_t isHovering, uint8_t isTakingOff);
 
+void
+printMode (uint8_t isLanding, uint8_t isHovering, uint8_t isTakingOff);
 #endif // UART_H

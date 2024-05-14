@@ -23,6 +23,7 @@
 #include "yaw.h"
 #include "switch.h"
 #include "display.h"
+#include "protocols.h"
 
 
 
@@ -61,10 +62,15 @@ SysTickIntHandler(void)
     static uint8_t UARTTickCount = 0;
     static uint8_t yawTickCount = 0;
     static uint8_t displayTickCount = 0;
+    static uint8_t fallTickCount = 0;
     const uint8_t ticksForUART = SYSTICK_RATE_HZ / UART_DISPLAY_RATE;
     const uint8_t ticksForDisplay = SYSTICK_RATE_HZ / DISPLAY_RATE;
 
+
     updateButtons ();       // Poll the buttons
+
+
+    updateSwitch();
 
     if (++displayTickCount >= ticksForDisplay)
     {
@@ -83,8 +89,14 @@ SysTickIntHandler(void)
         {                       // Signal a slow tick
             yawTickCount = 0;
             performReferenceSearchFlag = true;
+
         }
 
+    if (++fallTickCount >= FALL_TICKS )
+    {
+        fallTickCount = 0;
+        landingTimeFlag = true;
+    }
 
 }
 

@@ -47,6 +47,7 @@
 //********************************************************
 
 
+// This function initialises UART
 void
 initialiseUSB_UART (void)
 {
@@ -69,6 +70,8 @@ initialiseUSB_UART (void)
     UARTEnable(UART_USB_BASE);
 }
 
+
+// This function displays the specified character buffer on the terminal
 void
 UARTSend (char *pucBuffer)
 {
@@ -81,9 +84,30 @@ UARTSend (char *pucBuffer)
     }
 }
 
-
 void
-displayUART (int32_t desiredYaw, int32_t actualYaw, int16_t desiredAltitude, int16_t actualAltitude, uint8_t mainDuty, uint8_t tailDuty, uint8_t operatingMode)
+printMode (uint8_t isLanding, uint8_t isHovering, uint8_t isTakingOff)
+{
+    char statusStr[MAX_STR_LEN + 1];
+    if (isTakingOff == 1) {
+        usprintf (statusStr, "TAKING_OFF | \r\n");
+    } else if (isHovering == 1) {
+        usprintf (statusStr, "FLYING | \r\n");
+    } else if (isLanding == 1){
+        usprintf (statusStr, "LANDING | \r\n");
+    } else {
+        usprintf (statusStr, "LANDED | \r\n");
+    }
+    UARTSend (statusStr);
+
+}
+
+// This function displays the desired yaw, the actual yaw, the desired altitude, the actual altitude, both duty cycles, and 
+// the current mode of the helicopter on the terminal
+void
+displayUART (int32_t desiredYaw, int32_t actualYaw,
+             int16_t desiredAltitude, int16_t actualAltitude,
+             uint8_t mainDuty, uint8_t tailDuty, uint8_t isLanding,
+             uint8_t isHovering, uint8_t isTakingOff)
 {
     if (sendUARTFlag)
         {
@@ -91,14 +115,13 @@ displayUART (int32_t desiredYaw, int32_t actualYaw, int16_t desiredAltitude, int
 
             sendUARTFlag = false;
             // Form and send a status message to the console
-//            usprintf (statusStr, "DesiredYaw=%4d deg ActualYaw=%5d deg | \r\n", desiredYaw, actualYaw);
-//            UARTSend (statusStr);
+            usprintf (statusStr, "DesiredYaw=%4d deg ActualYaw=%5d deg | \r\n", desiredYaw, actualYaw);
+            UARTSend (statusStr);
             usprintf (statusStr, "DesiredAltitude=%4d %% ActualAltitude=%5d %%| \r\n", desiredAltitude, actualAltitude);
             UARTSend (statusStr);
-//            usprintf (statusStr, "MainDuty=%4d %% TailDuty=%4d %% | \r\n", mainDuty, tailDuty);
-//            UARTSend (statusStr);
-//            usprintf (statusStr, "OperatingMode=%4d | \r\n", operatingMode);
-//            UARTSend (statusStr);
+            usprintf (statusStr, "MainDuty=%4d %% TailDuty=%4d %% | \r\n", mainDuty, tailDuty);
+            UARTSend (statusStr);
+            printMode (isLanding, isHovering, isTakingOff);
 //
 
         }

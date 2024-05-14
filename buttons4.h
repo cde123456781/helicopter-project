@@ -13,17 +13,19 @@
 // Last modified:  7.2.2018
 
 // Based on the code provided by P.J Bones with the addition of the
-// virtual reset button
+// virtual reset button and button polling function
 // 
 // *******************************************************
 
 #include <stdint.h>
 #include <stdbool.h>
-
+#include "control.h"
+#include "protocols.h"
 //*****************************************************************************
 // Constants
 //*****************************************************************************
 enum butNames {UP = 0, DOWN, LEFT, RIGHT, RESET, NUM_BUTS};
+//enum butNames {UP = 0, DOWN, LEFT, RIGHT, NUM_BUTS};
 enum butStates {RELEASED = 0, PUSHED, NO_CHANGE};
 // UP button
 #define UP_BUT_PERIPH  SYSCTL_PERIPH_GPIOE
@@ -79,5 +81,12 @@ updateButtons (void);
 // enumeration butStates, excluding 'NUM_BUTS'. Safe under interrupt.
 uint8_t
 checkButton (uint8_t butName);
+
+
+
+// *******************************************************
+// pollButtons: Function checks each button to see if they have been pressed and adjusts 
+// the tailSetPoint or mainSetPoint accordingly
+void pollButtons(void);
 
 #endif /*BUTTONS_H_*/
