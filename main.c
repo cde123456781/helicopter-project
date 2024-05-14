@@ -25,7 +25,9 @@
 #include "control.h"
 #include "pwm.h"
 #include "uart.h"
-//#include "switch.h"
+#include "protocols.h"
+#include "switch.h"
+#include "buttons4.h"
 
 
 
@@ -65,68 +67,17 @@ debugLED(void)
 
 
 
-// Could probably be moved to a buttons.c module
-void
-pollButtons(void)
-{
-    if (checkButton (RIGHT) == PUSHED)
-     {
-        tailSetPoint -= 15.0;
-
-        if (tailSetPoint <= -180) {
-            tailSetPoint = 180 + (tailSetPoint - -180) ;
-        }
-
-     }
-
-    else if(checkButton (LEFT) == PUSHED)
-    {
-        //debugLED(); // LED not on upon start, but on after left button pressed
-        tailSetPoint += 15.0;
-        if (tailSetPoint > 180) {
-
-            tailSetPoint = -180 + (tailSetPoint - 180) ;
-        }
-    }
-
-    else if(checkButton (UP) == PUSHED)
-    {
-        mainSetPoint += 10.0;
-        if (mainSetPoint > 100) {
-            mainSetPoint = 100;
-        }
-    }
-
-    else if(checkButton (DOWN) == PUSHED)
-    {
-        mainSetPoint -= 10.0;
-        if (mainSetPoint < 0) {
-            mainSetPoint = 0;
-        }
-    }
-
-    else if (checkButton (RESET) == PUSHED)
-    {
-        SysCtlReset();
-    }
-
-}
-
-void takeOff(void)
-{
-
-}
-
-
 
 
 int
 main(void)
 {
 
-    uint8_t displayMode = 0;
     initDebugLED();
+
+    // Initialisation functions
     initButtons ();
+    initSwitch();
     initClock ();
     initADC ();
     initDisplay ();
@@ -134,30 +85,27 @@ main(void)
     initYawMonitor();
     initialiseMainPWM ();
     initialiseTailPWM ();
-
-
+    initProc();
     initialiseUSB_UART ();
 
     uint16_t meanVal;
 
     uint16_t volt = getVolt(); //approx 1241
 
-    SysCtlDelay (SysCtlClockGet() / 6);
+    SysCtlDelay (SysCtlClockGet() / 6); // A short delay to allow initialisation to complete
 
     meanVal = calcMean();
     setHelicopterLandedValue(meanVal);
 
-    enableTailPWMOutput();
-    enableMainPWMOutput();
 
 
     //for testing
-    mainSetPoint = 51;
+    //mainSetPoint = 51;
     // Enable interrupts to the processor.
-    checkRefStartup();
+    //checkRefStartup();
     IntMasterEnable();
-//    discoverReference();
-//    goToReference();
+    //discoverReference();
+    //goToReference();
     while (1)
     {
         IntMasterDisable();
@@ -169,42 +117,32 @@ main(void)
 
         calcPercentageAltitude(meanVal, volt);
         mainSensorValue = percentageAltitude;
+
         IntMasterEnable();
-        discoverReference();
 
+        // Determines if there has been a change in buttons or switches
         pollButtons();
+        pollSwitch();
 
-
+        determineProc();
         updateDisplay(percentageAltitude, yawAngle, yawAngleSubDegree, mainDutyCycle, tailDutyCycle);
-//        if (displayMode == 0)
-//         {
-//             displayAltitude(percentageAltitude);
-//             displayYawAngle(yawAngle, yawAngleSubDegree);
-//             displayPWM(mainDutyCycle, tailDutyCycle);
-//         } else if (displayMode == 1) {
-//             displayMeanVal (meanVal, numSamples);
-//         }
-//
-//        if(checkButton (LEFT) == PUSHED)
-//        {
-//            //debugLED(); // LED not on upon start, but on after left button pressed
-//            setHelicopterLandedValue(meanVal);
-//        }
-//
-//        if(checkButton (UP) == PUSHED)
-//        {
-//            clearDisplay();
-//            displayMode++;
-//            displayMode = displayMode % 3;
-//        }
 
-        checkControlFlag();
 
-        //SysCtlDelay (SysCtlClockGet() / 96);  // Update display at ~ 32 Hz
+        // Do we need to disable interrupts here?
+        if ((!isLanding) && (!isTakingOff) && (!isHovering)) {
+            tailDutyCycle = 0;
+            mainDutyCycle = 0;
+        } else {
+            checkControlFlag();
+        }
 
-//        displayUART (tailSetPoint, yawAngle,
-//                     mainSetPoint, percentageAltitude,
-//                     mainDutyCycle, tailDutyCycle, 1);
+        //SysCtlDelay(SysCtlClockGet()/96);
+
+
+        // WE NEED A VARIABLE FOR MODE
+        displayUART (tailSetPoint, yawAngle,
+                     mainSetPoint, percentageAltitude,
+                     mainDutyCycle, tailDutyCycle, isLanding, isHovering, isTakingOff);
 
 
 

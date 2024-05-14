@@ -29,7 +29,7 @@
 
 #define MAX_OUTPUT 70 // HeliSims are limited to 70 (lect 11.20). May need to change this for
                       // actual?
-#define MIN_OUTPUT 0    
+#define MIN_OUTPUT 2
 
 
 //********************************************************
@@ -60,6 +60,12 @@ float getMainDutyCycle (float setPoint, float sensorValue)
     static float previousSensorValue = 0;
 
     float error = setPoint - sensorValue;
+    if (error > 10) {
+        error = 10;
+    } else if (error < -10) {
+        error = -10;
+    }
+
     float proportionalTerm = KP_MAIN * error;
     float integralTerm = KI_MAIN * error * DELTA_T;
     float derivativeTerm = KD_MAIN * (previousSensorValue - sensorValue) / DELTA_T;
@@ -87,15 +93,24 @@ float getMainDutyCycle (float setPoint, float sensorValue)
  */
 float getTailDutyCycle (float setPoint, float sensorValue, float mainDutyCycle)
 {
+    static float error = 0;
     static float integral = 0;
     static float previousSensorValue = 0;
 
-    float error = setPoint - sensorValue;
+    error = setPoint - sensorValue;
     if (error > 180) {
         error = (error - 360);
     } else if (error < -180) {
         error = (error + 360);
     }
+
+    if (error < -15) {
+        error = -15;
+    } else if (error > 15) {
+        error = 15;
+    }
+
+
 
     float proportionalTerm = KP_TAIL * error;
     float integralTerm = KI_TAIL * error * DELTA_T;
@@ -120,7 +135,9 @@ float getTailDutyCycle (float setPoint, float sensorValue, float mainDutyCycle)
 }
 
 
-
+/*
+ * Adjusts the PWM for both the main and tail motors at a set schedule when flag is set by systick
+ */
 void
 checkControlFlag(void)
 {

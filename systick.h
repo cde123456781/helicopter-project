@@ -18,12 +18,13 @@
 #include "driverlib/systick.h"
 #include "buttons4.h"
 #include "inc/hw_memmap.h"
-#include "systick.h"
 #include "pwm.h"
 #include "uart.h"
 #include "control.h"
 #include "yaw.h"
 #include "switch.h"
+#include "display.h"
+#include "protocols.h"
 
 
 //********************************************************
