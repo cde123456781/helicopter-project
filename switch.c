@@ -1,3 +1,12 @@
+/**
+ * @file    switch.c
+ * @authors  Bryson Chen & Dylan Carlson
+ * @date    4 May 2024
+ *
+ * This module defines switch functionality for helicopter project
+ *
+*/
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -9,9 +18,8 @@
 #include "switch.h"
 #include "protocols.h"
 #include "yaw.h"
-//#include "buttons4.h"
 
-#include "uart.h"
+
 
 bool switchChange;
 
@@ -36,11 +44,7 @@ void
 updateSwitch(void)
 {
     switchState = GPIOPinRead(SLIDING_SWITCH_PORT_BASE, SLIDING_SWITCH_PIN) == SLIDING_SWITCH_PIN;
-//            displayUART (0, 0,
-//                         switchState, 0,
-//                         0, 0, 1);
 
-    //switchState = GPIOPinRead (UP_BUT_PORT_BASE, UP_BUT_PIN) == UP_BUT_PIN;
     if (switchState != switchPosition) {
         switchCount ++;
 

@@ -120,7 +120,7 @@ initClock (void)
     // Register the interrupt handler
     SysTickIntRegister(SysTickIntHandler);
     //
-    //SysTickIntRegister(ButtonIntHandler);
+
     // Enable interrupt and device
     SysTickIntEnable();
     SysTickEnable();

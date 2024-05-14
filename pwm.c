@@ -128,14 +128,12 @@ initialiseMainPWM (void)
                     PWM_GEN_MODE_UP_DOWN | PWM_GEN_MODE_NO_SYNC);
 
 
-    // Set the initial PWM parameters
     setMainPWM (PWM_INITIAL_DUTY);
 
 
     PWMGenEnable(PWM_MAIN_BASE, PWM_MAIN_GEN);
 
 
-    // Disable the output.  Repeat this call with 'true' to turn O/P on.
     PWMOutputState(PWM_MAIN_BASE, PWM_MAIN_OUTBIT, false);
 
 }

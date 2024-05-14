@@ -27,8 +27,8 @@
 // Constants
 //********************************************************
 
-#define MAX_OUTPUT 70 // HeliSims are limited to 70 (lect 11.20). May need to change this for
-                      // actual?
+#define MAX_OUTPUT 70
+
 #define MIN_OUTPUT 2
 
 
@@ -39,11 +39,11 @@
 uint8_t tailDutyCycle;
 uint8_t mainDutyCycle;
 
-float tailSetPoint;     //used for control functions
-float tailSensorValue;  //
+float tailSetPoint; //setPoint can be described as desired yaw.
+float tailSensorValue;  //sensor value can be described as current yaw.
 
-float mainSetPoint;     //used for control functions
-float mainSensorValue;  //
+float mainSetPoint;
+float mainSensorValue;
 
 
 //*****************************************************************************

@@ -1,3 +1,12 @@
+/**
+ * @file    protocols.h
+ * @authors  Bryson Chen & Dylan Carlson
+ * @date    4 May 2024
+ *
+ * This header file defines functions regarding takeoff, landing, flight modes
+ *
+*/
+
 #ifndef PROTOCOLS_H
 #define PROTOCOLS_H
 

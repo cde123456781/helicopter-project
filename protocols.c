@@ -1,3 +1,12 @@
+/**
+ * @file    protocols.c
+ * @authors  Bryson Chen & Dylan Carlson
+ * @date    4 May 2024
+ *
+ * This module defines functions regarding takeoff, landing, flight modes
+ *
+*/
+
 #include "switch.h"
 #include "yaw.h"
 #include "altitude.h"
@@ -27,7 +36,7 @@ void takeOffProc(void)
         enableMainPWMOutput();
         enableTailPWMOutput();
 
-        // take off procedure goes here
+
         //start hovering 2% alt
 
         mainSetPoint = 2;
