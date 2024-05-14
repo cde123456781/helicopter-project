@@ -51,7 +51,7 @@ a circular buffer.
 void ADCIntHandler(void);
 
 /*
-Initialises the analog-to-digital converter.
+Initialises and configures the analog-to-digital converter.
 */
 void initADC (void);
 

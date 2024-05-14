@@ -80,7 +80,7 @@ void YawIntHandler(void)
 //Calculates yaw angle range -180 - 180
 void calculateYawAngle(void)
 {
-    //GPIOIntDisable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
+
 
     // Splits the revolution into 448
     int32_t anglePerYawCount = 360 * YAW_ANGLE_SCALE / (NUM_SLOTS * TRIGGERS_PER_SLOT);
@@ -113,7 +113,22 @@ void calculateYawAngle(void)
     }
 
     yawAngle = yawAngle / 1000;
-    //GPIOIntEnable(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1 );
+
+}
+
+// This interrupt is triggered when discoverReference is called when the helicopter is
+// directly facing the reference point. Stops discoverReference, and sets yawReference and resets yawCount
+void YawReferenceIntHandler(void)
+{
+    isRefFound = 1;
+    yawCount = 0;
+    yawReference = 0;
+
+    tailSetPoint = 0;
+
+
+    GPIOIntClear(GPIO_PORTC_BASE, GPIO_PIN_4);
+    GPIOIntDisable(GPIO_PORTC_BASE, GPIO_PIN_4);
 }
 
 // This interrupt is triggered when discoverReference is called when the helicopter is
@@ -202,12 +217,7 @@ goToReference(void)
         if (tailSetPoint != yawReference)
         {
             tailSetPoint = yawReference;
-//            if (tailSensorValue < 0)
-//            {
-//                tailSetPoint += 1;
-//            } else {
-//                tailSetPoint -= 1;
-//            }
+
 
         }
 
